@@ -68,6 +68,9 @@ coresplash = "1.0.1"
 #https://github.com/Kotlin/kotlinx.coroutines
 coroutines = "1.9.0"
 
+#https://github.com/qiushui95/YangDevExt
+devext = "1.0.1"
+
 #https://github.com/Tencent/VasDolly
 dolly = "3.0.6"
 
@@ -96,7 +99,7 @@ fragment = "1.8.4"
 glide = "4.16.0"
 
 #https://github.com/autonomousapps/dependency-analysis-gradle-plugin
-gradleAnalysis = "2.2.0"
+gradleAnalysis = "2.3.0"
 
 #https://github.com/chrisbanes/haze
 #动态高斯模糊
@@ -112,7 +115,7 @@ initializer = "1.0.17"
 jodatime = "2.13.0"
 
 #https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
-junit5 = "5.11.2"
+junit5 = "5.11.3"
 
 #https://github.com/InsertKoinIO/koin
 koin = "4.0.0"
@@ -121,10 +124,10 @@ koin = "4.0.0"
 kotlin = "2.0.21"
 
 #https://github.com/google/ksp
-ksp = "2.0.21-1.0.25"
+ksp = "2.0.21-1.0.26"
 
 #https://github.com/pinterest/ktlint
-ktlint = "1.3.1"
+ktlint = "1.4.0"
 
 #https://github.com/skydoves/landscapist
 landscapist = "2.4.1"
@@ -136,7 +139,7 @@ leakcanary = "2.14"
 lifecycle = "2.8.6"
 
 #https://github.com/airbnb/lottie-android
-lottie = "6.5.2"
+lottie = "6.6.0"
 
 #https://github.com/material-components/material-components-android
 material = "1.12.0"
@@ -145,7 +148,7 @@ material = "1.12.0"
 maven = "0.30.0"
 
 #https://github.com/Tencent/MMKV/blob/master/README_CN.md
-mmkv = "1.3.9"
+mmkv = "2.0.0"
 
 #https://github.com/square/moshi
 moshi = "1.15.1"
@@ -205,7 +208,7 @@ telephoto = "0.13.0"
 transformers = "1.0.6"
 
 #https://github.com/azhon/AppUpdate
-update = "4.3.5"
+update = "4.3.6"
 
 #https://github.com/adrielcafe/voyager
 #导航框架
@@ -247,7 +250,8 @@ android-junit5 = { id = "de.mannodermaus.android-junit5", version.ref = "android
 application = { id = "com.android.application", version.ref = "agp" }
 compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 gradleAnalysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "gradleAnalysis" }
-kotlin = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 library = { id = "com.android.library", version.ref = "agp" }
 maven = { id = "com.vanniktech.maven.publish", version.ref = "maven" }
@@ -340,6 +344,11 @@ core-splash = { module = "androidx.core:core-splashscreen", version.ref = "cores
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+
+#https://github.com/panpf/zoomimage
+devext-coroutines = { module = "com.github.qiushui95.YangDevExt:coroutines", version.ref = "devext" }
+devext-moshi = { module = "com.github.qiushui95.YangDevExt:moshi", version.ref = "devext" }
+devext-normal = { module = "com.github.qiushui95.YangDevExt:normal", version.ref = "devext" }
 
 #https://github.com/Tencent/VasDolly
 dolly = { module = "com.tencent.vasdolly:helper", version.ref = "dolly" }

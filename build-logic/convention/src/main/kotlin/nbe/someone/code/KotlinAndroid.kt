@@ -20,7 +20,6 @@ import com.android.build.api.dsl.CommonExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
-import org.gradle.kotlin.dsl.dependencies
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 
@@ -47,10 +46,16 @@ internal fun configureKotlinAndroid(
     }
 }
 
-internal fun Project.configureKotlin(jvmTarget: JvmTarget = JvmTarget.JVM_21) {
+internal fun Project.configureKotlin(
+    jvmTarget: JvmTarget = JvmTarget.JVM_21,
+    strictMode: Boolean = true,
+) {
     kotlinOptions {
         compilerOptions {
             this.jvmTarget.set(jvmTarget)
+            if (strictMode) {
+                freeCompilerArgs.add("-Xexplicit-api=strict")
+            }
         }
     }
 }

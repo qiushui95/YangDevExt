@@ -42,10 +42,9 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 defaultConfig.targetSdk = 34
                 defaultConfig.versionCode = 1
                 defaultConfig.versionName = "1.0.0"
-
             }
 
-            configureKotlin()
+            configureKotlin(strictMode = false)
 
             configSpotless()
         }

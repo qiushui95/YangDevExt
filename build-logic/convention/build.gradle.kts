@@ -36,5 +36,9 @@ gradlePlugin {
             id = "someone.code.library"
             implementationClass = "AndroidLibraryConventionPlugin"
         }
+        register("kotlinLibrary") {
+            id = "someone.code.kotlin"
+            implementationClass = "KotlinLibraryConventionPlugin"
+        }
     }
 }
