@@ -54,19 +54,6 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                 }
             }
 
-            extensions.configure<PublishingExtension> {
-                repositories {
-                    maven {
-                        name = "Hero"
-                        url = URI.create(System.getenv("HERO_NEXUS_URL"))
-                        credentials {
-                            username = System.getenv("HERO_NEXUS_USERNAME")
-                            password = System.getenv("HERO_NEXUS_PASSWORD")
-                        }
-                    }
-                }
-            }
-
             configSpotless()
 
             configureKotlin()
