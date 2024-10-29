@@ -22,4 +22,6 @@ rootProject.name = "YangDevExt"
 
 include(":app")
 
+include(":coroutines")
 include(":moshi")
+include(":normal")
