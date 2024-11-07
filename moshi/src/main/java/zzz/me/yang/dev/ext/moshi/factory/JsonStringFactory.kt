@@ -7,15 +7,16 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.nextAnnotations
 import okio.BufferedSource
 import zzz.me.yang.dev.ext.moshi.anno.JsonString
+import zzz.me.yang.dev.ext.moshi.base.SingleJsonAdapter
 import java.lang.reflect.Type
 
 internal class JsonStringFactory : JsonAdapter.Factory {
-    private class Adapter : JsonAdapter<String>() {
-        override fun fromJson(reader: JsonReader): String {
+    private class Adapter : SingleJsonAdapter<String>() {
+        override fun from(reader: JsonReader): String {
             return reader.nextSource().use(BufferedSource::readUtf8)
         }
 
-        override fun toJson(writer: JsonWriter, value: String?) {
+        override fun to(writer: JsonWriter, value: String?) {
             writer.valueSink().use { sink -> sink.writeUtf8(checkNotNull(value)) }
         }
     }
