@@ -1,6 +1,5 @@
 package zzz.me.yang.dev.ext.normal
 
-import kotlin.math.min
 
 public object FileSizeUtil {
     public sealed class Symbol(internal val maxSize: Long) {
@@ -14,8 +13,15 @@ public object FileSizeUtil {
     /**
      * 格式化文件大小
      * @param maxSymbol 最大的单位
+     * @param maxDecimalSize 最大的小数位数
+     * @param removeSuffix 是否移除后缀
      */
-    public fun format(size: Long, maxSymbol: Symbol = Symbol.MB): String {
+    public fun format(
+        size: Long,
+        maxSymbol: Symbol = Symbol.MB,
+        maxDecimalSize: Int = 2,
+        removeSuffix: Boolean = true,
+    ): String {
         var curSize = size.toDouble()
         var curMaxSize = maxSymbol.maxSize.toDouble()
 
@@ -28,29 +34,13 @@ public object FileSizeUtil {
             step++
         }
 
+        val result = NumberUtils.formatNumStr(curSize, maxDecimalSize, removeSuffix)
+
         return when (step) {
-            0 -> "${size}B"
-            1 -> subNumToStr(curSize, 0) + "KB"
-            2 -> subNumToStr(curSize, 0) + "MB"
-            else -> subNumToStr(curSize, 2) + "GB"
+            0 -> "${result}B"
+            1 -> result + "KB"
+            2 -> result + "MB"
+            else -> result + "GB"
         }
-    }
-
-    private fun subNumToStr(num: Double, decimalSize: Int): String {
-        val numStr = num.toString()
-
-        val dotIndex = numStr.indexOf(".")
-
-        if (dotIndex == -1) {
-            return numStr
-        }
-
-        val endIndex = if (decimalSize == 0) {
-            dotIndex
-        } else {
-            min(numStr.length, dotIndex + decimalSize + 1)
-        }
-
-        return numStr.substring(0, endIndex)
     }
 }
