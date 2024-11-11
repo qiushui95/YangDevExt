@@ -26,6 +26,7 @@
             <option value="$PROJECT_DIR$/build-logic" />
             <option value="$PROJECT_DIR$/build-logic/convention" />
             <option value="$PROJECT_DIR$/coroutines" />
+            <option value="$PROJECT_DIR$/fragment" />
             <option value="$PROJECT_DIR$/moshi" />
             <option value="$PROJECT_DIR$/normal" />
           </set>

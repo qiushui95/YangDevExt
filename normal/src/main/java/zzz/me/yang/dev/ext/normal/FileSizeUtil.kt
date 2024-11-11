@@ -1,6 +1,5 @@
 package zzz.me.yang.dev.ext.normal
 
-
 public object FileSizeUtil {
     public sealed class Symbol(internal val maxSize: Long) {
         public data object KB : Symbol(1024L * 1024)
