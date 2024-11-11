@@ -26,9 +26,14 @@
             <option value="$PROJECT_DIR$/build-logic" />
             <option value="$PROJECT_DIR$/build-logic/convention" />
             <option value="$PROJECT_DIR$/coroutines" />
+            <option value="$PROJECT_DIR$/entity" />
+            <option value="$PROJECT_DIR$/entity/paging" />
             <option value="$PROJECT_DIR$/fragment" />
             <option value="$PROJECT_DIR$/moshi" />
             <option value="$PROJECT_DIR$/normal" />
+            <option value="$PROJECT_DIR$/vm" />
+            <option value="$PROJECT_DIR$/vm/core" />
+            <option value="$PROJECT_DIR$/vm/ext" />
           </set>
         </option>
         <option name="resolveExternalAnnotations" value="false" />

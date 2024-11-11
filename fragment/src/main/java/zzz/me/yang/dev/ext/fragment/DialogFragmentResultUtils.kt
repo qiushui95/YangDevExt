@@ -6,7 +6,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LifecycleOwner
 
 public object DialogFragmentResultUtils {
-
     private const val KEY_SHOW_TAG = "showTag"
 
     private const val EVENT_ON_SHOW = "onShow"
@@ -22,7 +21,6 @@ public object DialogFragmentResultUtils {
         showTag: String,
         fragmentManagerBlock: Fragment.() -> FragmentManager,
     ) {
-
         if (owner !is Fragment) throw RuntimeException("owner is not Fragment")
 
         val manager = fragmentManagerBlock(owner)
