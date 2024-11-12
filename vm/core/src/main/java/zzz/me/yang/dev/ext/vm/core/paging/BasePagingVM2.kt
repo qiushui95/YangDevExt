@@ -28,10 +28,10 @@ public abstract class BasePagingVM2<U, ITEM : VMMapper<ITEM2>, ITEM2 : PagingIte
             pagingParam = param2,
         ) ?: return null
 
-        return { responseBlock().convert { mapper() } }
+        return { responseBlock().convert { mapper(uiInfo) } }
     }
 
-    protected abstract suspend fun ITEM2.mapper(): ITEM
+    protected abstract suspend fun ITEM2.mapper(uiInfo: U): ITEM
 
     protected abstract suspend fun getPagingResponseBlock2(
         uiInfo: U,
