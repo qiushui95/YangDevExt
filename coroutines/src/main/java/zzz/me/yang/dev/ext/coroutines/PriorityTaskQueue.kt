@@ -70,8 +70,8 @@ public class PriorityTaskQueue(
 
     private suspend fun startNextTask(scope: CoroutineScope): Boolean {
         val taskInfo = doWithTaskList {
-            taskList.runCatching { removeFirst() }
-        }.getOrNull() ?: return false
+            taskList.runCatching { removeAt(0) }.getOrNull()
+        } ?: return false
 
         scope.launch(SupervisorJob() + taskExceptionHandler) {
             taskInfo.task()
