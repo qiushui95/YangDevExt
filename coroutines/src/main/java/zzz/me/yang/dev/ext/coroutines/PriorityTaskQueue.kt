@@ -5,7 +5,6 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -27,19 +26,20 @@ public class PriorityTaskQueue(
     private val mutex = Mutex()
     private val taskList = mutableListOf<TaskInfo>()
 
-    private suspend fun <R> doWithTaskList(block: (MutableList<TaskInfo>) -> R): R {
+    private suspend fun <R> doWithTaskList(block: MutableList<TaskInfo>.() -> R): R {
         return mutex.withLock { block(taskList) }
     }
 
     public fun addTask(priority: Priority, task: suspend () -> Unit) {
         scope.launch(Dispatchers.Default) {
             doWithTaskList {
-                taskList.add(TaskInfo(priority, task))
-                taskList.sortBy { it.priority.sort }
+                add(TaskInfo(priority, task))
+                sortBy { it.priority.sort }
+                map { it.priority }
             }
-        }
 
-        processNextTask()
+            processNextTask()
+        }
     }
 
     private val processMutex = Mutex()
@@ -51,17 +51,13 @@ public class PriorityTaskQueue(
     }
 
     private suspend fun tryNextTask(scope: CoroutineScope) {
-        if (processMutex.isLocked) return
+        if (processMutex.tryLock().not()) return
 
-        processMutex.lock()
-
-        while (scope.isActive) {
-            val hasMoreTask = startNextTask(scope)
-
-            if (hasMoreTask.not()) break
-        }
+        val hasMoreTask = startNextTask(scope)
 
         processMutex.unlock()
+
+        if (hasMoreTask) tryNextTask(scope)
     }
 
     private val taskExceptionHandler = CoroutineExceptionHandler { _, throwable ->
@@ -70,8 +66,10 @@ public class PriorityTaskQueue(
 
     private suspend fun startNextTask(scope: CoroutineScope): Boolean {
         val taskInfo = doWithTaskList {
-            taskList.runCatching { removeAt(0) }.getOrNull()
-        } ?: return false
+            runCatching { removeAt(0) }.getOrNull()
+        }
+
+        taskInfo ?: return false
 
         scope.launch(SupervisorJob() + taskExceptionHandler) {
             taskInfo.task()
