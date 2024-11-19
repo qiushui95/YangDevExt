@@ -4,6 +4,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LifecycleOwner
 
@@ -62,5 +63,12 @@ public object FragmentResultUtils {
         crossinline listener: (T?) -> Unit,
     ) {
         setListener<T>(fragment.childFragmentManager, fragment, listener)
+    }
+
+    public inline fun <reified T : Parcelable> setListener(
+        activity: FragmentActivity,
+        crossinline listener: (T?) -> Unit,
+    ) {
+        setListener<T>(activity.supportFragmentManager, activity, listener)
     }
 }
