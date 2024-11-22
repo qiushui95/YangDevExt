@@ -4,6 +4,8 @@ import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.internal.Util
 import zzz.me.yang.dev.ext.moshi.anno.JsonSingle
 import zzz.me.yang.dev.ext.moshi.base.SingleJsonAdapter
 import java.lang.reflect.Type
@@ -47,6 +49,39 @@ internal class JsonSingleFactory : JsonAdapter.Factory {
         }
     }
 
+    private class ListChildAdapter(
+        moshi: Moshi,
+        childType: Type,
+        annotations: MutableSet<out Annotation>,
+    ) : SingleJsonAdapter<List<Any>>() {
+        private val childAdapter = moshi.adapter<Any>(childType, annotations)
+
+        override fun from(reader: JsonReader): List<Any> {
+            reader.beginArray()
+
+            val list = mutableListOf<Any?>()
+
+            while (reader.hasNext()) {
+                list.add(childAdapter.fromJson(reader))
+            }
+
+            reader.endArray()
+
+            return list.filterNotNull()
+        }
+
+        override fun to(writer: JsonWriter, value: List<Any>?) {
+            if (value == null) {
+                writer.nullValue()
+                return
+            }
+
+            writer.beginArray()
+            value.forEach { childAdapter.toJson(writer, it) }
+            writer.endArray()
+        }
+    }
+
     override fun create(
         type: Type,
         annotations: MutableSet<out Annotation>,
@@ -57,6 +92,26 @@ internal class JsonSingleFactory : JsonAdapter.Factory {
         val singleAnnotation = annotations.filterIsInstance<JsonSingle>()
             .firstOrNull()
             ?: return null
+
+        if (singleAnnotation.isListChild) {
+            if (otherAnnotations.isNotEmpty()) {
+                throw IllegalArgumentException(
+                    "JsonSingle.isListChild can't have other annotations",
+                )
+            }
+
+            if (Types.getRawType(type) != List::class.java) {
+                throw IllegalArgumentException(
+                    "JsonSingle.isListChild must be used with List",
+                )
+            }
+
+            val childType = (type as Util.ParameterizedTypeImpl).typeArguments[0]
+
+            val childAnnotation = mutableSetOf(JsonSingle(singleAnnotation.value))
+
+            return ListChildAdapter(moshi, childType, childAnnotation)
+        }
 
         return Adapter(moshi, type, otherAnnotations.toMutableSet(), singleAnnotation)
     }

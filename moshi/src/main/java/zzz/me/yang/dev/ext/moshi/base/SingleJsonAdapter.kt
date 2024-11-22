@@ -15,10 +15,11 @@ public abstract class SingleJsonAdapter<T> : JsonAdapter<T>() {
         ): JsonAdapter<*>? {
             if (type != clz) return null
 
-            return create(annotations, moshi)
+            return createAdapter(type, annotations, moshi)
         }
 
-        protected abstract fun create(
+        protected abstract fun createAdapter(
+            type: Type,
             annotations: MutableSet<out Annotation>,
             moshi: Moshi,
         ): JsonAdapter<*>?

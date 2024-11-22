@@ -6,6 +6,7 @@ import com.squareup.moshi.Moshi
 import zzz.me.yang.dev.ext.moshi.anno.JsonStrHandler
 import zzz.me.yang.dev.ext.moshi.base.FromJsonAdapter
 import zzz.me.yang.dev.ext.moshi.base.SingleJsonAdapter
+import java.lang.reflect.Type
 
 internal class JsonStrHandlerFactory : SingleJsonAdapter.Factory(String::class.java) {
     private class Adapter(
@@ -44,7 +45,8 @@ internal class JsonStrHandlerFactory : SingleJsonAdapter.Factory(String::class.j
         }
     }
 
-    override fun create(
+    override fun createAdapter(
+        type: Type,
         annotations: MutableSet<out Annotation>,
         moshi: Moshi,
     ): JsonAdapter<*>? {

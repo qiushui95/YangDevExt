@@ -14,12 +14,15 @@
  *   limitations under the License.
  */
 
+import nbe.someone.code.configJavaTest
 import nbe.someone.code.configSpotless
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.named
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
@@ -45,6 +48,12 @@ class KotlinLibraryConventionPlugin : Plugin<Project> {
             }
 
             configSpotless()
+
+            configJavaTest()
+
+            tasks.named<Test>("test") {
+                useJUnitPlatform()
+            }
         }
     }
 }

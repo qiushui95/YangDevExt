@@ -5,4 +5,5 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.maven) apply false
     alias(libs.plugins.compose) apply false
+    alias(libs.plugins.android.junit5) apply false
 }
