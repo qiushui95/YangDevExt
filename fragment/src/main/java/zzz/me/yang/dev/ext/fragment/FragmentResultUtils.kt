@@ -13,22 +13,32 @@ public object FragmentResultUtils {
     public const val KEY_RESULT: String = "fragmentResult"
 
     public fun setResult(
+        manager: FragmentManager,
+        requestKey: String = REQUEST_KEY,
+        bundleBlock: Bundle.() -> Unit = {},
+        resultBlock: () -> Parcelable,
+    ) {
+        val result = Bundle()
+
+        result.bundleBlock()
+
+        result.putParcelable(KEY_RESULT, resultBlock())
+
+        manager.setFragmentResult(requestKey, result)
+    }
+
+    public fun setResult(
         owner: LifecycleOwner?,
         fragmentManagerBlock: Fragment.() -> FragmentManager = { parentFragmentManager },
+        requestKey: String = REQUEST_KEY,
         bundleBlock: Bundle.() -> Unit = {},
-        resultBlock: (() -> Parcelable)? = null,
+        resultBlock: () -> Parcelable,
     ) {
         if (owner !is Fragment) throw RuntimeException("owner is not Fragment")
 
         val manager = fragmentManagerBlock(owner)
 
-        val result = Bundle()
-
-        result.bundleBlock()
-
-        result.putParcelable(KEY_RESULT, resultBlock?.invoke())
-
-        manager.setFragmentResult(REQUEST_KEY, result)
+        setResult(manager, requestKey, bundleBlock, resultBlock)
     }
 
     public inline fun <reified T : Parcelable> getParcelable(bundle: Bundle, key: String): T? {
@@ -51,24 +61,27 @@ public object FragmentResultUtils {
     public inline fun <reified T : Parcelable> setListener(
         manager: FragmentManager,
         owner: LifecycleOwner,
+        requestKey: String = REQUEST_KEY,
         crossinline listener: (T?) -> Unit,
     ) {
-        manager.setFragmentResultListener(REQUEST_KEY, owner) { _, bundle ->
+        manager.setFragmentResultListener(requestKey, owner) { _, bundle ->
             listener(getResult<T>(bundle))
         }
     }
 
     public inline fun <reified T : Parcelable> setListener(
         fragment: Fragment,
+        requestKey: String = REQUEST_KEY,
         crossinline listener: (T?) -> Unit,
     ) {
-        setListener<T>(fragment.childFragmentManager, fragment, listener)
+        setListener<T>(fragment.childFragmentManager, fragment, requestKey, listener)
     }
 
     public inline fun <reified T : Parcelable> setListener(
         activity: FragmentActivity,
+        requestKey: String = REQUEST_KEY,
         crossinline listener: (T?) -> Unit,
     ) {
-        setListener<T>(activity.supportFragmentManager, activity, listener)
+        setListener<T>(activity.supportFragmentManager, activity, requestKey, listener)
     }
 }
