@@ -10,5 +10,5 @@ public abstract class VMAction : MVIAction {
         return owner
     }
 
-    public abstract operator fun invoke(owner: LifecycleOwner?)
+    public abstract suspend operator fun invoke(owner: LifecycleOwner?)
 }
