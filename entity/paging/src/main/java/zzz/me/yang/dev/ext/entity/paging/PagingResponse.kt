@@ -14,6 +14,16 @@ public data class PagingResponse<T>(
         public fun setStartPage(page: Int) {
             pageStart = page
         }
+
+        public inline fun <reified T> getEmpty(): PagingResponse<T> {
+            return PagingResponse(
+                curPage = pageStart,
+                hasMore = false,
+                list = emptyList(),
+                totalSize = 0,
+                totalPage = 0,
+            )
+        }
     }
 
     val nextPage: Int = curPage + 1
