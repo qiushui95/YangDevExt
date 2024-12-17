@@ -35,7 +35,7 @@ public interface VMHandler<U : VMUI, I, A : VMAction, Args>
     public suspend fun <T> startSuspendWork(
         canContinue: U.() -> Boolean,
         asyncMapper: U.(Async) -> U,
-        interval: Long = 0L,
+        interval: Long = 1000L,
         startMapper: (U.() -> U)? = null,
         dataMapper: (U.(T) -> U)? = null,
         failMapper: (U.(Throwable) -> U)? = null,
@@ -53,7 +53,7 @@ public interface VMHandler<U : VMUI, I, A : VMAction, Args>
     public suspend fun <T> startSuspendWork(
         key: String,
         workStrategy: WorkStrategy = WorkStrategy.CancelCurrent,
-        interval: Long = 0L,
+        interval: Long = 1000L,
         startMapper: (U.() -> U)? = null,
         dataMapper: (U.(T) -> U)? = null,
         failMapper: (U.(Throwable) -> U)? = null,
