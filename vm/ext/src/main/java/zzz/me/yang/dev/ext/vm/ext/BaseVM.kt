@@ -21,7 +21,12 @@ public fun <U : VMUI, I, A : VMAction, Args : BasePageArgs> BaseVM<U, I, A, Args
     lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
     consume: suspend (action: A) -> Unit,
 ): Job where I : VMIntent<U, I, A, Args> {
-    return lifecycleOwner.subscribe(store, consume, {}, lifecycleState)
+
+    val consumeBlock: suspend (A) -> Unit = {
+        runCatching { consume(it) }.onFailure { intentError(it) }
+    }
+
+    return lifecycleOwner.subscribe(store, consumeBlock, {}, lifecycleState)
 }
 
 @Composable
@@ -30,5 +35,10 @@ public fun <U : VMUI, I, A : VMAction, Args : BasePageArgs> BaseVM<U, I, A, Args
     mode: SubscriptionMode = SubscriptionMode.Started,
     consume: suspend CoroutineScope.(action: A) -> Unit = {},
 ): State<U> where I : VMIntent<U, I, A, Args> {
-    return store.subscribe(lifecycle = lifecycle, mode = mode, consume = consume)
+
+    val consumeBlock: suspend CoroutineScope.(A) -> Unit = {
+        runCatching { consume(it) }.onFailure { intentError(it) }
+    }
+
+    return store.subscribe(lifecycle = lifecycle, mode = mode, consume = consumeBlock)
 }

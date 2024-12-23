@@ -66,7 +66,7 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
         }
 
         recover { ex ->
-            onErrorIntent(ex)
+            intentError(ex)
             null
         }
 
@@ -126,7 +126,7 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
         try {
             reduceIntent(intent, pipeline)
         } catch (ex: Throwable) {
-            onErrorIntent(ex)
+            intentError(ex)
         }
     }
 
@@ -135,7 +135,7 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
         intent.apply { reduce(pipeline) }
     }
 
-    protected fun onErrorIntent(ex: Throwable) {
+    public fun intentError(ex: Throwable) {
         if (ex.javaClass.name == "kotlinx.coroutines.JobCancellationException") return
 
         intent(provideCommonIntent(CommonIntent.OnError(ex)))
@@ -211,7 +211,7 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
     private fun getFailBlock(
         onFail: (suspend (Throwable) -> Unit)?,
     ): (suspend (Throwable) -> Unit) {
-        return onFail ?: { this.onErrorIntent(it) }
+        return onFail ?: { this.intentError(it) }
     }
 
     public override suspend fun <T> startSuspendWork(
@@ -329,7 +329,7 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
             updateAsync(asyncMapper) { Async.Fail(ex) }
 
             if (onFailList.isEmpty()) {
-                onErrorIntent(ex)
+                intentError(ex)
             } else {
                 onFailList.forEach { it(ex) }
             }
