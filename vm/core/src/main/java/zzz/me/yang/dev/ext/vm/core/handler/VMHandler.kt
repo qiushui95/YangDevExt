@@ -93,4 +93,6 @@ public interface VMHandler<U : VMUI, I, A : VMAction, Args>
     )
 
     public suspend fun actionBack(pipeline: Pipeline<U, I, A>, res: Int? = null)
+
+    public suspend fun actionPage(pipeline: Pipeline<U, I, A>, args: BasePageArgs)
 }

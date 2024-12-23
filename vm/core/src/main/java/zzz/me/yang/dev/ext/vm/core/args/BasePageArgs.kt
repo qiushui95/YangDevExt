@@ -1,3 +1,7 @@
 package zzz.me.yang.dev.ext.vm.core.args
 
-public interface BasePageArgs
+import androidx.lifecycle.LifecycleOwner
+
+public interface BasePageArgs {
+    public fun launchPage(owner: LifecycleOwner?)
+}

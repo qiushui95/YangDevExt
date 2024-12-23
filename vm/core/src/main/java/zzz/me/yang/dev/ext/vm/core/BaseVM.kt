@@ -458,6 +458,10 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
         actionCommon(pipeline, CommonAction.Back())
     }
 
+    override suspend fun actionPage(pipeline: Pipeline<U, I, A>, args: BasePageArgs) {
+        actionCommon(pipeline, CommonAction.LaunchPage(args))
+    }
+
     public fun onLifecycleEvent(event: Lifecycle.Event) {
         val intent = CommonIntent.OnLifecycle(event)
 
