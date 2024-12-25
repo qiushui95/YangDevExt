@@ -3,8 +3,8 @@ package zzz.me.yang.dev.ext.vm.core.paging
 import zzz.me.yang.dev.ext.entity.paging.PagingItem
 import zzz.me.yang.dev.ext.entity.paging.PagingParam
 import zzz.me.yang.dev.ext.entity.paging.PagingResponse
-import zzz.me.yang.dev.ext.vm.core.async.Async
-import zzz.me.yang.dev.ext.vm.core.async.PagingAsync
+import zzz.me.yang.dev.ext.vm.core.work.PagingAsync
+import zzz.me.yang.dev.ext.vm.core.work.WorkAsync
 
 public data class PagingData<T : PagingItem>(
     val pageSize: Int = 20,
@@ -13,11 +13,11 @@ public data class PagingData<T : PagingItem>(
     val emptyPage: Boolean = true,
     val hasMore: Boolean = true,
     val list: List<T> = emptyList(),
-    val async: Async = Async.Uninitialized,
+    val async: WorkAsync = WorkAsync.Uninitialized,
     val totalSize: Int = 0,
     val totalPage: Int = 0,
 ) {
-    val isRefreshing: Boolean by lazy { isRefresh && async is Async.Loading }
+    val isRefreshing: Boolean by lazy { isRefresh && async is WorkAsync.Loading }
 
     val needLoadInit: Boolean by lazy { async.shouldLoad && list.isEmpty() }
 
@@ -41,10 +41,10 @@ public data class PagingData<T : PagingItem>(
         val isFullPage = list.isEmpty()
 
         return when {
-            async is Async.Loading -> PagingAsync.Loading(isFullPage)
-            async is Async.Fail -> PagingAsync.Fail(isFullPage, async.error)
-            async is Async.Success && isFullPage -> PagingAsync.EmptyPage
-            async is Async.Success -> PagingAsync.Success(hasMore)
+            async is WorkAsync.Loading -> PagingAsync.Loading(isFullPage)
+            async is WorkAsync.Fail -> PagingAsync.Fail(isFullPage, async.error)
+            async is WorkAsync.Success && isFullPage -> PagingAsync.EmptyPage
+            async is WorkAsync.Success -> PagingAsync.Success(hasMore)
             else -> PagingAsync.Uninitialized
         }
     }
@@ -82,7 +82,7 @@ public data class PagingData<T : PagingItem>(
             emptyPage = response.isEmptyPage,
             hasMore = response.hasMore,
             list = response.list,
-            async = Async.Success,
+            async = WorkAsync.Success,
             totalSize = response.totalSize,
             totalPage = response.totalPage,
         )

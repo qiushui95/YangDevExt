@@ -7,7 +7,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 internal class WorkStrategyCheckerImpl : WorkStrategyChecker {
-
     private val jobMap by lazy { mutableMapOf<String, Job>() }
 
     private val mutex = Mutex()
@@ -15,15 +14,14 @@ internal class WorkStrategyCheckerImpl : WorkStrategyChecker {
     override suspend fun startCheck(
         workStrategy: WorkStrategy,
         key: String,
-        next: suspend (Job) -> Job
+        next: suspend (Job) -> Job,
     ): Job? = mutex.withLock { check(workStrategy, key, next) }
 
     private suspend fun check(
         workStrategy: WorkStrategy,
         key: String,
-        next: suspend (Job) -> Job
+        next: suspend (Job) -> Job,
     ): Job? {
-
         val workJob = jobMap.getOrPut(key) { SupervisorJob() }
 
         return checkWorkStatus(workJob, workStrategy) { next(it) }

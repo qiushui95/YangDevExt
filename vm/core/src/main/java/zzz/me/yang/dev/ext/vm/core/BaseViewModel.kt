@@ -12,7 +12,6 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.koin.core.Koin
-import pro.respawn.flowmvi.api.ActionReceiver
 import pro.respawn.flowmvi.api.ActionShareBehavior
 import pro.respawn.flowmvi.api.PipelineContext
 import pro.respawn.flowmvi.api.StateProvider
@@ -26,13 +25,15 @@ import pro.respawn.flowmvi.plugins.reduce
 import zzz.me.yang.dev.ext.vm.core.action.CommonAction
 import zzz.me.yang.dev.ext.vm.core.action.VMAction
 import zzz.me.yang.dev.ext.vm.core.args.BasePageArgs
-import zzz.me.yang.dev.ext.vm.core.async.Async
 import zzz.me.yang.dev.ext.vm.core.handler.VMHandler
 import zzz.me.yang.dev.ext.vm.core.intent.CommonIntent
 import zzz.me.yang.dev.ext.vm.core.intent.PagingIntent
 import zzz.me.yang.dev.ext.vm.core.intent.VMIntent
+import zzz.me.yang.dev.ext.vm.core.interval.IntervalChecker
+import zzz.me.yang.dev.ext.vm.core.interval.IntervalCheckerImpl
 import zzz.me.yang.dev.ext.vm.core.plugin.whileCanInit
 import zzz.me.yang.dev.ext.vm.core.ui.VMUI
+import zzz.me.yang.dev.ext.vm.core.work.WorkAsync
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategy
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategyChecker
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategyCheckerImpl
@@ -41,8 +42,9 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     private val koin: Koin,
     private val args: Args,
     initialUI: U,
-) : ViewModel(), VMHandler<U, I, A, Args> where I : VMIntent<U, I, A, Args> {
 
+) : ViewModel(), VMHandler<U, I, A, Args>, IntervalChecker by IntervalCheckerImpl()
+    where I : VMIntent<U, I, A, Args> {
     private val _ioScope: CoroutineScope by lazy {
         object : CoroutineScope {
             override val coroutineContext = viewModelScope.coroutineContext + Dispatchers.IO
@@ -52,6 +54,8 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     protected val workStrategyChecker: WorkStrategyChecker by lazy { WorkStrategyCheckerImpl() }
 
     private val intervalJob = SupervisorJob()
+
+    private val iaDispatcher = Dispatchers.IO.limitedParallelism(1)
 
     public val store: Store<U, I, A> by lazyStore(initialUI, viewModelScope) {
         configFirst()
@@ -94,19 +98,6 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     @Suppress("UNCHECKED_CAST")
     public val states: StateFlow<U> = (store as StateProvider<U>).states
 
-    @Suppress("UNCHECKED_CAST")
-    public suspend fun action(action: A?) {
-        action ?: return
-
-        (store as ActionReceiver<A>).action(action)
-    }
-
-    public open fun intent(intent: I?) {
-        intent ?: return
-
-        store.intent(intent)
-    }
-
     protected open fun StoreBuilder<U, I, A>.configFirst() {
     }
 
@@ -114,9 +105,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     }
 
     private fun onInit() {
-        val info = CommonIntent.OnInit()
-
-        intent(provideCommonIntent(info))
+        intentCommon(CommonIntent.OnInit())
     }
 
     private suspend fun reduceByCatch(intent: I, pipeline: PipelineContext<U, I, A>) {
@@ -130,12 +119,6 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     @CallSuper
     protected open suspend fun reduceIntent(intent: I, pipeline: PipelineContext<U, I, A>) {
         intent.apply { reduce(pipeline) }
-    }
-
-    public fun intentError(ex: Throwable) {
-        if (ex.javaClass.name == "kotlinx.coroutines.JobCancellationException") return
-
-        intent(provideCommonIntent(CommonIntent.OnError(ex)))
     }
 
     public override suspend fun <R> withStateResult(block: suspend U.() -> R): R {
@@ -156,7 +139,6 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     public override suspend fun <T> startSuspendWork(
         key: String,
         workStrategy: WorkStrategy,
-        interval: Long,
         startMapper: (U.() -> U)?,
         dataMapper: (U.(T) -> U)?,
         failMapper: (U.(Throwable) -> U)?,
@@ -189,8 +171,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
 
     public override suspend fun <T> startSuspendWork(
         canContinue: U.() -> Boolean,
-        asyncMapper: U.(Async) -> U,
-        interval: Long,
+        asyncMapper: U.(WorkAsync) -> U,
         startMapper: (U.() -> U)?,
         dataMapper: (U.(T) -> U)?,
         failMapper: (U.(Throwable) -> U)?,
@@ -223,7 +204,10 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         )
     }
 
-    private suspend fun updateAsync(asyncMapper: (U.(Async) -> U)?, asyncBlock: () -> Async) {
+    private suspend fun updateAsync(
+        asyncMapper: (U.(WorkAsync) -> U)?,
+        asyncBlock: () -> WorkAsync,
+    ) {
         asyncMapper ?: return
 
         updateState { asyncMapper(asyncBlock()) }
@@ -231,7 +215,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
 
     private fun <T> doSuspendWork(
         job: Job?,
-        asyncMapper: (U.(Async) -> U)?,
+        asyncMapper: (U.(WorkAsync) -> U)?,
         startMapper: (U.() -> U)?,
         dataMapper: (U.(T) -> U)?,
         failMapper: (U.(Throwable) -> U)?,
@@ -245,7 +229,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         try {
             onStartList.forEach { it.invoke() }
 
-            updateAsync(asyncMapper) { Async.Loading }
+            updateAsync(asyncMapper) { WorkAsync.Loading }
 
             if (startMapper != null) {
                 updateState { startMapper() }
@@ -261,9 +245,9 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
 
             onSuccessList.forEach { it.invoke(result) }
 
-            updateAsync(asyncMapper) { Async.Success }
+            updateAsync(asyncMapper) { WorkAsync.Success }
         } catch (ex: Throwable) {
-            updateAsync(asyncMapper) { Async.Fail(ex) }
+            updateAsync(asyncMapper) { WorkAsync.Fail(ex) }
 
             if (onFailList.isEmpty()) {
                 intentError(ex)
@@ -336,81 +320,104 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         intervalJob.cancelChildren()
     }
 
-    override fun intent(pipeline: Pipeline<U, I, A>, intent: I) {
-        pipeline.intent(intent)
+    override fun intent(vararg intent: I?) {
+        viewModelScope.launch(iaDispatcher) {
+            for (i in intent) {
+                i ?: continue
+                checkInterval(i) { store.intent(i) }
+            }
+        }
     }
 
-    override fun intentCommon(pipeline: Pipeline<U, I, A>, info: CommonIntent) {
-        intent(pipeline, provideCommonIntent(info))
+    override fun intentCommon(info: CommonIntent?) {
+        intent(provideCommonIntent(info ?: return))
     }
 
-    override fun intentInit(pipeline: Pipeline<U, I, A>) {
-        intentCommon(pipeline, CommonIntent.OnInit())
+    override fun intentInit() {
+        intentCommon(CommonIntent.OnInit())
     }
 
-    override fun intentError(pipeline: Pipeline<U, I, A>, error: Throwable) {
-        intentCommon(pipeline, CommonIntent.OnError(error))
+    override fun intentError(error: Throwable?) {
+        error ?: return
+
+        if (error.javaClass.name == "kotlinx.coroutines.JobCancellationException") return
+
+        intentCommon(CommonIntent.OnError(error))
     }
 
-    override fun intentPaging(pipeline: Pipeline<U, I, A>, info: PagingIntent) {
-        pipeline.intent(provideCommonIntent(CommonIntent.OnPaging(info)))
+    override fun intentPaging(info: PagingIntent?) {
+        intent(provideCommonIntent(CommonIntent.OnPaging(info ?: return)))
     }
 
-    override fun intentPagingRefresh(pipeline: Pipeline<U, I, A>) {
-        intentPaging(pipeline, PagingIntent.Refresh())
+    override fun intentPagingRefresh() {
+        intentPaging(PagingIntent.Refresh())
     }
 
-    override suspend fun action(pipeline: Pipeline<U, I, A>, action: A) {
-        pipeline.action(action)
+    override fun action(pipeline: Pipeline<U, I, A>, vararg action: A?) {
+        viewModelScope.launch(iaDispatcher) {
+            for (a in action) {
+                a ?: continue
+                checkInterval(a) { pipeline.action(a) }
+            }
+        }
     }
 
-    override suspend fun actionCommon(pipeline: Pipeline<U, I, A>, info: CommonAction) {
-        action(pipeline, provideCommonAction(info))
+    override fun actionCommon(pipeline: Pipeline<U, I, A>, info: CommonAction?) {
+        action(pipeline, provideCommonAction(info ?: return))
     }
 
-    override suspend fun actionToast(pipeline: Pipeline<U, I, A>, res: Int?, isShort: Boolean) {
-        res ?: return
+    override fun getToastAction(res: Int?, isShort: Boolean): A? {
+        res ?: return null
 
         val toastInfo = ToastInfo.Res(res, isShort)
 
-        actionCommon(pipeline, CommonAction.Toast(toastInfo))
+        return provideCommonAction(CommonAction.Toast(toastInfo))
     }
 
-    override suspend fun actionToast(pipeline: Pipeline<U, I, A>, text: String?, isShort: Boolean) {
-        text ?: return
+    override fun actionToast(pipeline: Pipeline<U, I, A>, res: Int?, isShort: Boolean) {
+        action(pipeline, getToastAction(res, isShort))
+    }
+
+    override fun getToastAction(text: String?, isShort: Boolean): A? {
+        text ?: return null
 
         val toastInfo = ToastInfo.Text(text, isShort)
 
-        actionCommon(pipeline, CommonAction.Toast(toastInfo))
+        return provideCommonAction(CommonAction.Toast(toastInfo))
     }
 
-    override suspend fun actionBack(pipeline: Pipeline<U, I, A>, res: Int?) {
-        actionToast(pipeline, res)
-
-        actionCommon(pipeline, CommonAction.Back())
+    override fun actionToast(pipeline: Pipeline<U, I, A>, text: String?, isShort: Boolean) {
+        action(pipeline, getToastAction(text, isShort))
     }
 
-    override suspend fun actionPage(pipeline: Pipeline<U, I, A>, args: BasePageArgs) {
-        actionCommon(pipeline, CommonAction.LaunchPage(args))
+    override fun getBackAction(res: Int?): A? {
+        val toastInfo = res?.run { ToastInfo.Res(this) }
+
+        return provideCommonAction(CommonAction.Back(toastInfo = toastInfo))
+    }
+
+    override fun actionBack(pipeline: Pipeline<U, I, A>, res: Int?) {
+        action(pipeline, getBackAction(res))
+    }
+
+    override fun getPageAction(args: BasePageArgs?): A? {
+        args ?: return null
+
+        return provideCommonAction(CommonAction.LaunchPage(args))
+    }
+
+    override fun actionPage(pipeline: Pipeline<U, I, A>, args: BasePageArgs?) {
+        action(pipeline, getPageAction(args))
     }
 
     public fun onLifecycleEvent(event: Lifecycle.Event) {
-        val intent = CommonIntent.OnLifecycle(event)
-
-        intent(provideCommonIntent(intent))
-    }
-
-    protected suspend fun actionToast(pipeline: Pipeline<U, I, A>, res: Int?) {
-        res ?: return
-
-        val toastInfo = ToastInfo.Res(res)
-
-        actionCommon(pipeline, CommonAction.Toast(toastInfo))
+        intentCommon(CommonIntent.OnLifecycle(event))
     }
 
     protected open suspend fun reduceError(pipeline: Pipeline<U, I, A>, error: Throwable) {
-        actionCommon(pipeline, CommonAction.Error(error))
         error.printStackTrace()
+
+        actionCommon(pipeline, CommonAction.Error(error))
     }
 
     protected open suspend fun reduceInit(pipeline: Pipeline<U, I, A>) {}
@@ -422,6 +429,6 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     }
 
     protected open suspend fun reduceBack(pipeline: Pipeline<U, I, A>) {
-        action(pipeline, provideCommonAction(CommonAction.Back()))
+        actionBack(pipeline)
     }
 }

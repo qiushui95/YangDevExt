@@ -21,7 +21,6 @@ public fun <U : VMUI, I, A : VMAction, Args : BasePageArgs> BaseViewModel<U, I, 
     lifecycleState: Lifecycle.State = Lifecycle.State.STARTED,
     consume: suspend (action: A) -> Unit,
 ): Job where I : VMIntent<U, I, A, Args> {
-
     val consumeBlock: suspend (A) -> Unit = {
         runCatching { consume(it) }.onFailure { intentError(it) }
     }
@@ -35,7 +34,6 @@ public fun <U : VMUI, I, A : VMAction, Args : BasePageArgs> BaseViewModel<U, I, 
     mode: SubscriptionMode = SubscriptionMode.Started,
     consume: suspend CoroutineScope.(action: A) -> Unit = {},
 ): State<U> where I : VMIntent<U, I, A, Args> {
-
     val consumeBlock: suspend CoroutineScope.(A) -> Unit = {
         runCatching { consume(it) }.onFailure { intentError(it) }
     }

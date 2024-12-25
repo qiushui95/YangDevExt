@@ -1,4 +1,4 @@
-package zzz.me.yang.dev.ext.vm.core.async
+package zzz.me.yang.dev.ext.vm.core.work
 
 public sealed class PagingAsync(internal val sort: Int) {
     public open val isFullPage: Boolean = true
@@ -24,15 +24,15 @@ public sealed class PagingAsync(internal val sort: Int) {
         override val isSuccess: Boolean = true
     }
 
-    public operator fun plus(async: Async): PagingAsync {
+    public operator fun plus(async: WorkAsync): PagingAsync {
         return if (async.sort < sort) {
             when (async) {
-                Async.Uninitialized -> Uninitialized
-                Async.Loading -> Loading(isFullPage)
-                is Async.Fail -> Fail(isFullPage, async.error)
-                Async.Success -> this
+                WorkAsync.Uninitialized -> Uninitialized
+                WorkAsync.Loading -> Loading(isFullPage)
+                is WorkAsync.Fail -> Fail(isFullPage, async.error)
+                WorkAsync.Success -> this
             }
-        } else if (async == Async.Success && this is EmptyPage) {
+        } else if (async == WorkAsync.Success && this is EmptyPage) {
             Success(hasMore = false)
         } else {
             this

@@ -10,7 +10,7 @@ import pro.respawn.flowmvi.plugins.whileSubscribed
 import java.util.concurrent.atomic.AtomicBoolean
 
 @FlowMVIDSL
-public inline fun <S : MVIState, I : MVIIntent, A : MVIAction> StoreBuilder<S, I, A>.whileCanInit(
+internal inline fun <S : MVIState, I : MVIIntent, A : MVIAction> StoreBuilder<S, I, A>.whileCanInit(
     crossinline startInitBlock: suspend PipelineContext<S, I, A>.() -> Unit,
 ) {
     val hasInitAtomic = AtomicBoolean(false)

@@ -10,11 +10,10 @@ import zzz.me.yang.dev.ext.vm.core.ui.VMUI
 private typealias VMMapper<T> = PagingItemConverter<T>
 
 public interface PagingVM2<U : VMUI, M1, M2, I, A : VMAction, Args> : PagingVM<U, M1, I, A, Args>
-    where  M1 : VMMapper<M2>, M2 : PagingItem, I : VMIntent<U, I, A, Args>, Args : BasePageArgs {
-
+    where M1 : VMMapper<M2>, M2 : PagingItem, I : VMIntent<U, I, A, Args>, Args : BasePageArgs {
     override suspend fun getPagingResponseBlock(
         uiInfo: U,
-        pagingParam: PagingParam<M1>
+        pagingParam: PagingParam<M1>,
     ): PagingResponseBlock<M1>? {
         val param2 = pagingParam.convert { convert() }
 
@@ -25,7 +24,6 @@ public interface PagingVM2<U : VMUI, M1, M2, I, A : VMAction, Args> : PagingVM<U
 
         return { responseBlock().convert { mapper(uiInfo) } }
     }
-
 
     public suspend fun M2.mapper(uiInfo: U): M1
 

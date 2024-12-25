@@ -9,21 +9,20 @@ import zzz.me.yang.dev.ext.entity.paging.PagingResponse
 import zzz.me.yang.dev.ext.vm.core.Pipeline
 import zzz.me.yang.dev.ext.vm.core.action.VMAction
 import zzz.me.yang.dev.ext.vm.core.args.BasePageArgs
-import zzz.me.yang.dev.ext.vm.core.async.Async
 import zzz.me.yang.dev.ext.vm.core.handler.VMHandler
 import zzz.me.yang.dev.ext.vm.core.intent.CommonIntent
 import zzz.me.yang.dev.ext.vm.core.intent.PagingIntent
 import zzz.me.yang.dev.ext.vm.core.intent.VMIntent
 import zzz.me.yang.dev.ext.vm.core.plugin.whileCanInit
 import zzz.me.yang.dev.ext.vm.core.ui.VMUI
+import zzz.me.yang.dev.ext.vm.core.work.WorkAsync
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategy
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategyChecker
 
 public typealias PagingResponseBlock<ITEM> = suspend () -> PagingResponse<ITEM>
 
 public interface PagingVM<U : VMUI, ITEM, I, A : VMAction, Args : BasePageArgs>
-    where  ITEM : PagingItem, I : VMIntent<U, I, A, Args> {
-
+    where ITEM : PagingItem, I : VMIntent<U, I, A, Args> {
     public fun getVMHandler(): VMHandler<U, I, A, Args>
 
     public fun getStrategyChecker(): WorkStrategyChecker
@@ -37,7 +36,7 @@ public interface PagingVM<U : VMUI, ITEM, I, A : VMAction, Args : BasePageArgs>
 
                 val commonIntent = CommonIntent.OnPaging(PagingIntent.LoadInit())
 
-                handler.intent(this, handler.provideCommonIntent(commonIntent))
+                handler.intent(handler.provideCommonIntent(commonIntent))
             }
         }
     }
@@ -48,14 +47,12 @@ public interface PagingVM<U : VMUI, ITEM, I, A : VMAction, Args : BasePageArgs>
 
     public suspend fun getPagingResponseBlock(
         uiInfo: U,
-        pagingParam: PagingParam<ITEM>
+        pagingParam: PagingParam<ITEM>,
     ): PagingResponseBlock<ITEM>?
-
 
     private fun U.canLoadPaging(isRefresh: Boolean): Boolean {
         return if (isRefresh) true else mapper().hasMore
     }
-
 
     public suspend fun loadPagingData(
         pipeline: Pipeline<U, I, A>,
@@ -76,7 +73,8 @@ public interface PagingVM<U : VMUI, ITEM, I, A : VMAction, Args : BasePageArgs>
                         )
                     } catch (ex: Exception) {
                         ex.printStackTrace()
-                        pipeline.updateState { mapper(mapper().copy(async = Async.Fail(ex))) }
+
+                        pipeline.updateState { mapper(mapper().copy(async = WorkAsync.Fail(ex))) }
                     }
                 }
             }
@@ -94,13 +92,12 @@ public interface PagingVM<U : VMUI, ITEM, I, A : VMAction, Args : BasePageArgs>
             val responseBlock = getPagingResponseBlock(this, pagingParam) ?: return@withState
 
             pipeline.updateState {
-                mapper(mapper().copy(async = Async.Loading, isRefresh = isRefresh))
+                mapper(mapper().copy(async = WorkAsync.Loading, isRefresh = isRefresh))
             }
 
             pipeline.updateState { mapper(mapper().updateByResponse(responseBlock.invoke())) }
         }
     }
-
 
     private fun U.createPagingParam(isRefresh: Boolean): PagingParam<ITEM> {
         val pagingData = mapper()
@@ -124,7 +121,6 @@ public interface PagingVM<U : VMUI, ITEM, I, A : VMAction, Args : BasePageArgs>
         )
     }
 
-
     public suspend fun refresh(pipeline: Pipeline<U, I, A>, initPagingData: Boolean) {
         if (initPagingData) {
             pipeline.updateState { mapper(mapper().initialize()) }
@@ -146,7 +142,6 @@ public interface PagingVM<U : VMUI, ITEM, I, A : VMAction, Args : BasePageArgs>
             pagingParamBlock = { createPagingParam(false) },
         )
     }
-
 
     public suspend fun handlePagingIntent(pipeline: Pipeline<U, I, A>, intent: PagingIntent) {
         when (intent) {

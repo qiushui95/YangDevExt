@@ -7,11 +7,11 @@ import zzz.me.yang.dev.ext.vm.core.Pipeline
 import zzz.me.yang.dev.ext.vm.core.action.CommonAction
 import zzz.me.yang.dev.ext.vm.core.action.VMAction
 import zzz.me.yang.dev.ext.vm.core.args.BasePageArgs
-import zzz.me.yang.dev.ext.vm.core.async.Async
 import zzz.me.yang.dev.ext.vm.core.intent.CommonIntent
 import zzz.me.yang.dev.ext.vm.core.intent.PagingIntent
 import zzz.me.yang.dev.ext.vm.core.intent.VMIntent
 import zzz.me.yang.dev.ext.vm.core.ui.VMUI
+import zzz.me.yang.dev.ext.vm.core.work.WorkAsync
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategy
 
 public interface VMHandler<U : VMUI, I, A : VMAction, Args>
@@ -32,8 +32,7 @@ public interface VMHandler<U : VMUI, I, A : VMAction, Args>
 
     public suspend fun <T> startSuspendWork(
         canContinue: U.() -> Boolean,
-        asyncMapper: U.(Async) -> U,
-        interval: Long = 1000L,
+        asyncMapper: U.(WorkAsync) -> U,
         startMapper: (U.() -> U)? = null,
         dataMapper: (U.(T) -> U)? = null,
         failMapper: (U.(Throwable) -> U)? = null,
@@ -51,7 +50,6 @@ public interface VMHandler<U : VMUI, I, A : VMAction, Args>
     public suspend fun <T> startSuspendWork(
         key: String,
         workStrategy: WorkStrategy = WorkStrategy.CancelCurrent,
-        interval: Long = 1000L,
         startMapper: (U.() -> U)? = null,
         dataMapper: (U.(T) -> U)? = null,
         failMapper: (U.(Throwable) -> U)? = null,
@@ -66,31 +64,35 @@ public interface VMHandler<U : VMUI, I, A : VMAction, Args>
         block: suspend (U) -> T,
     ): Job?
 
-    public fun intent(pipeline: Pipeline<U, I, A>, intent: I)
+    public fun intent(vararg intent: I?)
 
-    public fun intentCommon(pipeline: Pipeline<U, I, A>, info: CommonIntent)
+    public fun intentCommon(info: CommonIntent?)
 
-    public fun intentInit(pipeline: Pipeline<U, I, A>)
+    public fun intentInit()
 
-    public fun intentError(pipeline: Pipeline<U, I, A>, error: Throwable)
+    public fun intentError(error: Throwable?)
 
-    public fun intentPaging(pipeline: Pipeline<U, I, A>, info: PagingIntent)
+    public fun intentPaging(info: PagingIntent?)
 
-    public fun intentPagingRefresh(pipeline: Pipeline<U, I, A>)
+    public fun intentPagingRefresh()
 
-    public suspend fun action(pipeline: Pipeline<U, I, A>, action: A)
+    public fun action(pipeline: Pipeline<U, I, A>, vararg action: A?)
 
-    public suspend fun actionCommon(pipeline: Pipeline<U, I, A>, info: CommonAction)
+    public fun actionCommon(pipeline: Pipeline<U, I, A>, info: CommonAction?)
 
-    public suspend fun actionToast(pipeline: Pipeline<U, I, A>, res: Int?, isShort: Boolean = true)
+    public fun getToastAction(res: Int?, isShort: Boolean = true): A?
 
-    public suspend fun actionToast(
-        pipeline: Pipeline<U, I, A>,
-        text: String?,
-        isShort: Boolean = true,
-    )
+    public fun actionToast(pipeline: Pipeline<U, I, A>, res: Int?, isShort: Boolean = true)
 
-    public suspend fun actionBack(pipeline: Pipeline<U, I, A>, res: Int? = null)
+    public fun getToastAction(text: String?, isShort: Boolean = true): A?
 
-    public suspend fun actionPage(pipeline: Pipeline<U, I, A>, args: BasePageArgs)
+    public fun actionToast(pipeline: Pipeline<U, I, A>, text: String?, isShort: Boolean = true)
+
+    public fun getBackAction(res: Int? = null): A?
+
+    public fun actionBack(pipeline: Pipeline<U, I, A>, res: Int? = null)
+
+    public fun getPageAction(args: BasePageArgs?): A?
+
+    public fun actionPage(pipeline: Pipeline<U, I, A>, args: BasePageArgs?)
 }
