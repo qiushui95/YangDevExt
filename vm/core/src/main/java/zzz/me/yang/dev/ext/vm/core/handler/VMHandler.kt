@@ -26,11 +26,9 @@ public interface VMHandler<U : VMUI, I, A : VMAction, Args>
 
     public fun provideCommonAction(info: CommonAction): A
 
-    public fun providePagingIntent(info: PagingIntent): I
+    public suspend fun <R> withStateResult(block: suspend U.() -> R): R
 
     public suspend fun handleCommonIntent(pipeline: Pipeline<U, I, A>, intent: CommonIntent)
-
-    public suspend fun handlePagingIntent(pipeline: Pipeline<U, I, A>, intent: PagingIntent)
 
     public suspend fun <T> startSuspendWork(
         canContinue: U.() -> Boolean,

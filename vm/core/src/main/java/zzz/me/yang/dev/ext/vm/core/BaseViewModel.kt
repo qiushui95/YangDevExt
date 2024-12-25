@@ -4,17 +4,13 @@ import androidx.annotation.CallSuper
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.blankj.utilcode.util.CacheMemoryStaticUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.koin.core.Koin
 import pro.respawn.flowmvi.api.ActionReceiver
 import pro.respawn.flowmvi.api.ActionShareBehavior
@@ -38,21 +34,22 @@ import zzz.me.yang.dev.ext.vm.core.intent.VMIntent
 import zzz.me.yang.dev.ext.vm.core.plugin.whileCanInit
 import zzz.me.yang.dev.ext.vm.core.ui.VMUI
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategy
+import zzz.me.yang.dev.ext.vm.core.work.WorkStrategyChecker
+import zzz.me.yang.dev.ext.vm.core.work.WorkStrategyCheckerImpl
 
-public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
+public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
     private val koin: Koin,
     private val args: Args,
     initialUI: U,
 ) : ViewModel(), VMHandler<U, I, A, Args> where I : VMIntent<U, I, A, Args> {
+
     private val _ioScope: CoroutineScope by lazy {
         object : CoroutineScope {
             override val coroutineContext = viewModelScope.coroutineContext + Dispatchers.IO
         }
     }
 
-    private val jobMap by lazy {
-        mutableMapOf<String, Job>()
-    }
+    protected val workStrategyChecker: WorkStrategyChecker by lazy { WorkStrategyCheckerImpl() }
 
     private val intervalJob = SupervisorJob()
 
@@ -141,71 +138,13 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
         intent(provideCommonIntent(CommonIntent.OnError(ex)))
     }
 
-    protected suspend fun <R> withStateResult(block: suspend U.() -> R): R {
+    public override suspend fun <R> withStateResult(block: suspend U.() -> R): R {
         var result: R? = null
         withState {
             result = block()
         }
 
         return result!!
-    }
-
-    private val getWorkJobMutex = Mutex()
-
-    private suspend fun getWorkJob(key: String): Job = getWorkJobMutex.withLock {
-        jobMap.getOrPut(key) { SupervisorJob() }
-    }
-
-    protected suspend fun beforeSuspendWork(
-        workStrategy: WorkStrategy?,
-        key: String?,
-        interval: Long = 1000L,
-        workBlock: suspend (Job) -> Job,
-    ): Job? {
-        if (interval > 0) {
-            val intervalKey = "${javaClass.name}-$key"
-
-            val lastTime = CacheMemoryStaticUtils.get<Long>(intervalKey) ?: 0L
-
-            val now = System.currentTimeMillis()
-
-            if (now - lastTime < interval) return null
-
-            CacheMemoryStaticUtils.put(intervalKey, now)
-        }
-
-        if (key == null || workStrategy == null) return workBlock(SupervisorJob())
-
-        val workJob = getWorkJob(key)
-
-        return checkWorkStatus(workJob = workJob, workStrategy = workStrategy) {
-            workBlock(workJob)
-        }
-    }
-
-    private suspend fun checkWorkStatus(
-        workJob: Job,
-        workStrategy: WorkStrategy,
-        workBlock: suspend () -> Job,
-    ): Job? {
-        val jobList = workJob.children
-
-        val hasWorkingJob = jobList.any { it.isActive }
-
-        when {
-            workStrategy is WorkStrategy.CancelCurrent && hasWorkingJob -> return null
-            workStrategy is WorkStrategy.CancelBefore -> {
-                jobList.forEach { it.cancelAndJoin() }
-            }
-
-            workStrategy is WorkStrategy.WaitIdle -> {
-                jobList.forEach { it.join() }
-            }
-
-            else -> {}
-        }
-
-        return workBlock()
     }
 
     private fun getFailBlock(
@@ -231,9 +170,9 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
         onEnd: (suspend () -> Unit)?,
         block: suspend (U) -> T,
     ): Job? {
-        return beforeSuspendWork(key = key, workStrategy = workStrategy, interval = interval) {
+        return workStrategyChecker.startCheck(workStrategy, key) { job ->
             doSuspendWork(
-                job = it,
+                job = job,
                 asyncMapper = null,
                 startMapper = startMapper,
                 dataMapper = dataMapper,
@@ -269,21 +208,19 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
 
         if (uiInfo.canContinue().not()) return null
 
-        return beforeSuspendWork(key = null, workStrategy = null, interval = interval) {
-            doSuspendWork(
-                job = it,
-                asyncMapper = asyncMapper,
-                startMapper = startMapper,
-                dataMapper = dataMapper,
-                failMapper = failMapper,
-                endMapper = endMapper,
-                onStartList = listOfNotNull(onStart, onStart2),
-                onFailList = listOfNotNull(getFailBlock(onFail), onFail2),
-                onSuccessList = listOfNotNull(onSuccess, onSuccess2),
-                onEnd = onEnd,
-                block = block,
-            )
-        }
+        return doSuspendWork(
+            job = null,
+            asyncMapper = asyncMapper,
+            startMapper = startMapper,
+            dataMapper = dataMapper,
+            failMapper = failMapper,
+            endMapper = endMapper,
+            onStartList = listOfNotNull(onStart, onStart2),
+            onFailList = listOfNotNull(getFailBlock(onFail), onFail2),
+            onSuccessList = listOfNotNull(onSuccess, onSuccess2),
+            onEnd = onEnd,
+            block = block,
+        )
     }
 
     private suspend fun updateAsync(asyncMapper: (U.(Async) -> U)?, asyncBlock: () -> Async) {
@@ -293,7 +230,7 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
     }
 
     private fun <T> doSuspendWork(
-        job: Job,
+        job: Job?,
         asyncMapper: (U.(Async) -> U)?,
         startMapper: (U.() -> U)?,
         dataMapper: (U.(T) -> U)?,
@@ -304,7 +241,7 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
         onSuccessList: List<(suspend (T) -> Unit)>,
         onEnd: (suspend () -> Unit)?,
         block: suspend (U) -> T,
-    ) = viewModelScope.launch(Dispatchers.IO + job) {
+    ) = viewModelScope.launch(Dispatchers.IO + (job ?: SupervisorJob())) {
         try {
             onStartList.forEach { it.invoke() }
 
@@ -358,11 +295,8 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
         return args
     }
 
-    override fun providePagingIntent(info: PagingIntent): I {
-        throw NotImplementedError()
-    }
-
-    public final override suspend fun handleCommonIntent(
+    @CallSuper
+    public override suspend fun handleCommonIntent(
         pipeline: Pipeline<U, I, A>,
         intent: CommonIntent,
     ) {
@@ -371,6 +305,7 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
             is CommonIntent.OnInit -> reduceInit(pipeline)
             is CommonIntent.OnLifecycle -> reduceLifecycle(pipeline, intent.event)
             is CommonIntent.OnBackPressed -> reduceBack(pipeline)
+            is CommonIntent.OnPaging -> {}
         }
 
         if (intent is CommonIntent.OnLifecycle) {
@@ -401,9 +336,6 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
         intervalJob.cancelChildren()
     }
 
-    override suspend fun handlePagingIntent(pipeline: Pipeline<U, I, A>, intent: PagingIntent) {
-    }
-
     override fun intent(pipeline: Pipeline<U, I, A>, intent: I) {
         pipeline.intent(intent)
     }
@@ -421,7 +353,7 @@ public abstract class BaseVM<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
     }
 
     override fun intentPaging(pipeline: Pipeline<U, I, A>, info: PagingIntent) {
-        pipeline.intent(providePagingIntent(info))
+        pipeline.intent(provideCommonIntent(CommonIntent.OnPaging(info)))
     }
 
     override fun intentPagingRefresh(pipeline: Pipeline<U, I, A>) {

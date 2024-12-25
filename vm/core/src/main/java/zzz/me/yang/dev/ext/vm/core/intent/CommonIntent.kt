@@ -13,4 +13,6 @@ public sealed class CommonIntent {
     public data class OnInit(val timestamp: Long = now()) : CommonIntent()
 
     public data class OnBackPressed(val timestamp: Long = now()) : CommonIntent()
+
+    public data class OnPaging(val pagingIntent: PagingIntent) : CommonIntent()
 }
