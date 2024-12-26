@@ -139,7 +139,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         key: String,
         workStrategy: WorkStrategy,
         startMapper: (U.() -> U)?,
-        dataMapper: (U.(T) -> U)?,
+        successMapper: (U.(T) -> U)?,
         failMapper: (U.(Throwable) -> U)?,
         endMapper: (U.() -> U)?,
         onStart: (suspend () -> Unit)?,
@@ -156,7 +156,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
                 job = job,
                 asyncMapper = null,
                 startMapper = startMapper,
-                dataMapper = dataMapper,
+                successMapper = successMapper,
                 failMapper = failMapper,
                 endMapper = endMapper,
                 onStartList = listOfNotNull(onStart, onStart2),
@@ -172,7 +172,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         canContinue: U.() -> Boolean,
         asyncMapper: U.(WorkAsync) -> U,
         startMapper: (U.() -> U)?,
-        dataMapper: (U.(T) -> U)?,
+        successMapper: (U.(T) -> U)?,
         failMapper: (U.(Throwable) -> U)?,
         endMapper: (U.() -> U)?,
         onStart: (suspend () -> Unit)?,
@@ -192,7 +192,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
             job = null,
             asyncMapper = asyncMapper,
             startMapper = startMapper,
-            dataMapper = dataMapper,
+            successMapper = successMapper,
             failMapper = failMapper,
             endMapper = endMapper,
             onStartList = listOfNotNull(onStart, onStart2),
@@ -216,7 +216,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         job: Job?,
         asyncMapper: (U.(WorkAsync) -> U)?,
         startMapper: (U.() -> U)?,
-        dataMapper: (U.(T) -> U)?,
+        successMapper: (U.(T) -> U)?,
         failMapper: (U.(Throwable) -> U)?,
         endMapper: (U.() -> U)?,
         onStartList: List<suspend () -> Unit>,
@@ -238,13 +238,13 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
 
             val result = block(uiInfo)
 
-            if (dataMapper != null) {
-                updateState { dataMapper(result) }
+            if (successMapper != null) {
+                updateState { successMapper(result) }
             }
 
-            onSuccessList.forEach { it.invoke(result) }
-
             updateAsync(asyncMapper) { WorkAsync.Success }
+
+            onSuccessList.forEach { it.invoke(result) }
         } catch (ex: Throwable) {
             updateAsync(asyncMapper) { WorkAsync.Fail(ex) }
 
