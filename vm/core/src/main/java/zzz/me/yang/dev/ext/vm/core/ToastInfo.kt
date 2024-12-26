@@ -17,7 +17,7 @@ public sealed class ToastInfo {
     public abstract fun getToastText(): String
 
     public data class Res(
-        val resId: Int,
+        public val resId: Int,
         override val isShort: Boolean = true,
         val args: Array<Any> = emptyArray(),
     ) : ToastInfo() {
