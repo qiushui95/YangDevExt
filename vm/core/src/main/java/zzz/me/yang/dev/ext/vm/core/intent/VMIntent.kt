@@ -10,14 +10,13 @@ import zzz.me.yang.dev.ext.vm.core.interval.IntervalWorkGetter
 import zzz.me.yang.dev.ext.vm.core.ui.VMUI
 
 public abstract class VMIntent<U : VMUI, I, A : VMAction, Args> :
-    MVIIntent,
-    IntervalWork,
-    IntervalWorkGetter where I : VMIntent<U, I, A, Args>, Args : BasePageArgs {
+    MVIIntent, IntervalWork, IntervalWorkGetter
+    where I : VMIntent<U, I, A, Args>, Args : BasePageArgs {
     override fun getIntervalKey(): String {
         return "Intent_${javaClass.name}"
     }
 
-    override fun getInterval(): Long = 1_000L
+    override fun getInterval(): Long = 500L
 
     override fun getIntervalWork(): IntervalWork = this
 

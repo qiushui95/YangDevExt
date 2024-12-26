@@ -7,7 +7,7 @@ import zzz.me.yang.dev.ext.vm.core.now
 
 public sealed class CommonAction : IntervalWork {
     override fun getIntervalKey(): String {
-        return "Action_Common_${javaClass.name}"
+        return "Action_Common_${javaClass.simpleName}"
     }
 
     override fun getInterval(): Long {
@@ -20,5 +20,13 @@ public sealed class CommonAction : IntervalWork {
 
     public data class Back(val timestamp: Long = now(), val toastInfo: ToastInfo?) : CommonAction()
 
-    public data class LaunchPage(val args: BasePageArgs) : CommonAction()
+    public data class LaunchPage(val args: BasePageArgs) : CommonAction() {
+        override fun getIntervalKey(): String {
+            return "Action_Common_LaunchPage_${args.javaClass.name}"
+        }
+
+        override fun getInterval(): Long {
+            return 500
+        }
+    }
 }

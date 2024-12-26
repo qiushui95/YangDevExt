@@ -16,20 +16,27 @@ internal class IntervalCheckerImpl : IntervalChecker {
     }
 
     private suspend fun startCheckInterval(work: IntervalWork, next: suspend () -> Unit) {
+        if (getCanNext(work).not()) return
+
+        val intervalKey = work.getIntervalKey()
         val interval = work.getInterval()
 
-        if (interval <= 0) return
+        if (interval > 0) intervalMap[intervalKey] = System.currentTimeMillis()
+
+        next()
+    }
+
+    private fun getCanNext(work: IntervalWork): Boolean {
+        val interval = work.getInterval()
+
+        if (interval <= 0) return true
 
         val key = work.getIntervalKey()
 
-        val lastTime = intervalMap[key] ?: 0
-
         val currentTime = System.currentTimeMillis()
 
-        if (lastTime + interval <= currentTime) return
+        val lastTime = intervalMap[key] ?: return true
 
-        intervalMap[key] = currentTime
-
-        next()
+        return lastTime + interval < currentTime
     }
 }

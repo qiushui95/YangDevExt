@@ -42,7 +42,6 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     private val koin: Koin,
     private val args: Args,
     initialUI: U,
-
 ) : ViewModel(), VMHandler<U, I, A, Args>, IntervalChecker by IntervalCheckerImpl()
     where I : VMIntent<U, I, A, Args> {
     private val _ioScope: CoroutineScope by lazy {
@@ -72,7 +71,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         }
 
         whileCanInit {
-            onInit()
+            onInit(this)
         }
 
         configLast()
@@ -104,8 +103,8 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     protected open fun StoreBuilder<U, I, A>.configLast() {
     }
 
-    private fun onInit() {
-        intentCommon(CommonIntent.OnInit())
+    private fun onInit(pipeline: PipelineContext<U, I, A>) {
+        pipeline.intent(provideCommonIntent(CommonIntent.OnInit()))
     }
 
     private suspend fun reduceByCatch(intent: I, pipeline: PipelineContext<U, I, A>) {
