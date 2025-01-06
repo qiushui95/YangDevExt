@@ -26,17 +26,52 @@ internal class IntervalCheckerImpl : IntervalChecker {
         next()
     }
 
+    private fun log(work: IntervalWork, messageBlock: () -> String) {
+        if (work.getCanLog().not()) return
+
+        work.log(messageBlock())
+    }
+
     private fun getCanNext(work: IntervalWork): Boolean {
         val interval = work.getInterval()
 
-        if (interval <= 0) return true
+        if (interval <= 0) {
+            log(work) { "${work.getIntervalKey()} do not need interval check" }
+            return true
+        }
 
         val key = work.getIntervalKey()
 
         val currentTime = System.currentTimeMillis()
 
-        val lastTime = intervalMap[key] ?: return true
+        val lastTime = intervalMap[key]
 
-        return lastTime + interval < currentTime
+        if (lastTime == null) {
+            log(work) { "${work.getIntervalKey()} lastTime is null" }
+
+            return true
+        }
+
+        val canNext = lastTime + interval < currentTime
+
+        if (canNext) {
+            log(work) { "${work.getIntervalKey()} can next" }
+        } else {
+            log(work) {
+                val sb = StringBuilder()
+                sb.append(work.getIntervalKey())
+                sb.append(" can not next, last run time is ")
+                sb.append(lastTime)
+                sb.append(", current time is ")
+                sb.append(currentTime)
+                sb.append(", interval is ")
+                sb.append(interval)
+                sb.append(", next can run time is ")
+                sb.append(lastTime + interval)
+                sb.toString()
+            }
+        }
+
+        return canNext
     }
 }
