@@ -1,50 +1,78 @@
 package zzz.me.yang.dev.ext.vm.core.paging
 
+import androidx.compose.runtime.IntState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import zzz.me.yang.dev.ext.entity.paging.PagingItem
 import zzz.me.yang.dev.ext.entity.paging.PagingParam
 import zzz.me.yang.dev.ext.entity.paging.PagingResponse
 import zzz.me.yang.dev.ext.vm.core.work.PagingAsync
 import zzz.me.yang.dev.ext.vm.core.work.WorkAsync
 
-public data class PagingData<T : PagingItem>(
-    val pageSize: Int = 20,
-    val isRefresh: Boolean = true,
-    val nextPage: Int = PagingResponse.pageStart,
-    val emptyPage: Boolean = true,
-    val hasMore: Boolean = true,
-    val list: List<T> = emptyList(),
-    val async: WorkAsync = WorkAsync.Uninitialized,
-    val totalSize: Int = 0,
-    val totalPage: Int = 0,
+public class PagingData<T : PagingItem>(
+    private val pageSize: Int = 20,
+    private val pageStart: Int = 1,
+    itemList: List<T> = emptyList(),
+    workAsync: WorkAsync = WorkAsync.Uninitialized,
 ) {
-    val isRefreshing: Boolean by lazy { isRefresh && async is WorkAsync.Loading }
-
-    val needLoadInit: Boolean by lazy { async.shouldLoad && list.isEmpty() }
-
-    val pagingAsync: PagingAsync by lazy {
-        createPagingAsync()
+    private companion object {
+        const val INIT_IS_EMPTY_PAGE = true
+        const val INIT_HAS_MORE = true
+        const val INIT_TOTAL_SIZE = 0
+        const val INIT_TOTAL_PAGE = 0
     }
 
-    public operator fun plus(itemInfo: T): PagingData<T> {
-        val newList = list + itemInfo
+    private val curPageState by lazy { mutableIntStateOf(pageStart) }
 
-        return copy(list = newList)
+    public val curPage: Int by curPageState
+
+    private val isEmptyPageState by lazy { mutableStateOf(INIT_IS_EMPTY_PAGE) }
+
+    public val isEmptyPage: Boolean by isEmptyPageState
+
+    private val hasMoreState by lazy { mutableStateOf(INIT_HAS_MORE) }
+
+    public val hasMore: Boolean by hasMoreState
+
+    private val _itemListState by lazy { mutableStateOf(itemList) }
+
+    public val itemListState: State<List<T>> by lazy { _itemListState }
+
+    public val itemList: List<T> by _itemListState
+
+    private val workAsyncState by lazy { mutableStateOf(workAsync) }
+
+    public val workAsync: WorkAsync by workAsyncState
+
+    private val _totalSizeState by lazy { mutableIntStateOf(INIT_TOTAL_SIZE) }
+
+    public val totalSizeState: IntState by lazy { _totalSizeState }
+
+    public val totalSize: Int by _totalSizeState
+
+    private val totalPageState by lazy { mutableIntStateOf(INIT_TOTAL_PAGE) }
+
+    public val totalPage: Int by totalPageState
+
+    public val pagingAsyncState: State<PagingAsync> by lazy {
+        derivedStateOf { createPagingAsync() }
     }
 
-    public operator fun minus(itemInfo: T): PagingData<T> {
-        val newList = list.filterNot { it == itemInfo }
-
-        return copy(list = newList)
-    }
+    public val pagingAsync: PagingAsync by pagingAsyncState
 
     private fun createPagingAsync(): PagingAsync {
-        val isFullPage = list.isEmpty()
+        val isFullPage = itemList.isEmpty()
+
+        val workAsync = workAsync
 
         return when {
-            async is WorkAsync.Loading -> PagingAsync.Loading(isFullPage)
-            async is WorkAsync.Fail -> PagingAsync.Fail(isFullPage, async.error)
-            async is WorkAsync.Success && isFullPage -> PagingAsync.EmptyPage
-            async is WorkAsync.Success -> PagingAsync.Success(hasMore)
+            workAsync is WorkAsync.Loading -> PagingAsync.Loading(isFullPage)
+            workAsync is WorkAsync.Fail -> PagingAsync.Fail(isFullPage, workAsync.error)
+            workAsync is WorkAsync.Success && isFullPage -> PagingAsync.EmptyPage
+            workAsync is WorkAsync.Success -> PagingAsync.Success(hasMore)
             else -> PagingAsync.Uninitialized
         }
     }
@@ -52,39 +80,47 @@ public data class PagingData<T : PagingItem>(
     /**
      * 初始化
      */
-    public fun initialize(): PagingData<T> = PagingData(pageSize = pageSize)
-
-    public fun updateList(block: (List<T>) -> List<T>): PagingData<T> {
-        val newList = block(list)
-
-        return copy(list = newList, emptyPage = newList.isEmpty())
+    public fun initialize() {
+        curPageState.intValue = pageStart
+        isEmptyPageState.value = INIT_IS_EMPTY_PAGE
+        hasMoreState.value = INIT_HAS_MORE
+        _itemListState.value = emptyList()
+        workAsyncState.value = workAsync
+        _totalSizeState.intValue = INIT_TOTAL_SIZE
+        totalPageState.intValue = INIT_TOTAL_PAGE
     }
 
-    public fun createRefreshParam(): PagingParam<T> {
+    public fun updateList(block: (List<T>) -> List<T>) {
+        _itemListState.value = block(itemList)
+    }
+
+    internal fun createRefreshParam(): PagingParam<T> {
         return PagingParam(
-            loadPage = PagingResponse.pageStart,
+            loadPage = pageStart,
             pageSize = pageSize,
             oldList = emptyList(),
         )
     }
 
-    public fun createNextParam(): PagingParam<T> {
+    internal fun createNextParam(): PagingParam<T> {
         return PagingParam(
-            loadPage = nextPage,
+            loadPage = curPage + 1,
             pageSize = pageSize,
-            oldList = list,
+            oldList = itemList,
         )
     }
 
-    internal fun updateByResponse(response: PagingResponse<T>): PagingData<T> {
-        return copy(
-            nextPage = response.nextPage,
-            emptyPage = response.isEmptyPage,
-            hasMore = response.hasMore,
-            list = response.list,
-            async = WorkAsync.Success,
-            totalSize = response.totalSize,
-            totalPage = response.totalPage,
-        )
+    internal fun updateWorkAsync(workAsync: WorkAsync) {
+        workAsyncState.value = workAsync
+    }
+
+    internal fun updateByResponse(response: PagingResponse<T>) {
+        curPageState.intValue = response.curPage
+        isEmptyPageState.value = response.curPage == pageStart && response.list.isEmpty()
+        hasMoreState.value = response.hasMore
+        _itemListState.value = response.list
+        workAsyncState.value = WorkAsync.Success
+        _totalSizeState.intValue = response.totalSize
+        totalPageState.intValue = response.totalPage
     }
 }

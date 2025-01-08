@@ -7,34 +7,11 @@ public data class PagingResponse<T>(
     val totalSize: Int,
     val totalPage: Int,
 ) {
-    public companion object {
-        public var pageStart: Int = 1
-            internal set
-
-        public fun setStartPage(page: Int) {
-            pageStart = page
-        }
-
-        public inline fun <reified T> getEmpty(): PagingResponse<T> {
-            return PagingResponse(
-                curPage = pageStart,
-                hasMore = false,
-                list = emptyList(),
-                totalSize = 0,
-                totalPage = 0,
-            )
-        }
-    }
-
-    val nextPage: Int = curPage + 1
-
-    val isEmptyPage: Boolean = curPage == pageStart && list.isEmpty()
-
-    public suspend fun <R> convert(block: suspend T.(Int) -> R): PagingResponse<R> {
+    public fun <R> convert(block: T.(Int) -> R?): PagingResponse<R> {
         return PagingResponse(
             curPage = curPage,
             hasMore = hasMore,
-            list = list.mapIndexed { index, itemInfo -> itemInfo.block(index) },
+            list = list.mapIndexedNotNull { index, itemInfo -> itemInfo.block(index) },
             totalSize = totalSize,
             totalPage = totalPage,
         )

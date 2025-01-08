@@ -5,8 +5,8 @@ public data class PagingParam<T : PagingItem>(
     val pageSize: Int,
     val oldList: List<T>,
 ) {
-    val isRefresh: Boolean
-        get() = loadPage == PagingResponse.pageStart
+//    val isRefresh: Boolean
+//        get() = loadPage == PagingResponse.pageStart
 
     public fun convertResponse(
         hasMore: Boolean,
@@ -27,11 +27,11 @@ public data class PagingParam<T : PagingItem>(
         )
     }
 
-    public fun <R : PagingItem> convert(block: T.() -> R): PagingParam<R> {
+    public fun <R : PagingItem> convert(block: T.() -> R?): PagingParam<R> {
         return PagingParam(
             loadPage = loadPage,
             pageSize = pageSize,
-            oldList = oldList.map { it.block() },
+            oldList = oldList.mapNotNull { it.block() },
         )
     }
 }

@@ -5,7 +5,7 @@ import kotlinx.coroutines.Job
 public interface WorkStrategyChecker {
     public suspend fun startCheck(
         workStrategy: WorkStrategy,
-        key: String,
+        key: String?,
         next: suspend (Job) -> Job,
     ): Job?
 }

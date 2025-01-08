@@ -13,15 +13,17 @@ internal class WorkStrategyCheckerImpl : WorkStrategyChecker {
 
     override suspend fun startCheck(
         workStrategy: WorkStrategy,
-        key: String,
+        key: String?,
         next: suspend (Job) -> Job,
     ): Job? = mutex.withLock { check(workStrategy, key, next) }
 
     private suspend fun check(
         workStrategy: WorkStrategy,
-        key: String,
+        key: String?,
         next: suspend (Job) -> Job,
     ): Job? {
+        if (key == null) return next(SupervisorJob())
+
         val workJob = jobMap.getOrPut(key) { SupervisorJob() }
 
         return checkWorkStatus(workJob, workStrategy) { next(it) }

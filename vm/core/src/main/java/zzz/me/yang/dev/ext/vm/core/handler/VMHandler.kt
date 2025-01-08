@@ -1,7 +1,6 @@
 package zzz.me.yang.dev.ext.vm.core.handler
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import org.koin.core.Koin
 import zzz.me.yang.dev.ext.vm.core.Pipeline
 import zzz.me.yang.dev.ext.vm.core.action.CommonAction
@@ -26,43 +25,27 @@ public interface VMHandler<U : VMUI, I, A : VMAction, Args>
 
     public fun provideCommonAction(info: CommonAction): A
 
-    public suspend fun <R> withStateResult(block: suspend U.() -> R): R
-
     public suspend fun handleCommonIntent(pipeline: Pipeline<U, I, A>, intent: CommonIntent)
 
     public suspend fun <T> startSuspendWork(
-        canContinue: U.() -> Boolean,
-        asyncMapper: U.(WorkAsync) -> U,
-        startMapper: (U.() -> U)? = null,
-        successMapper: (U.(T) -> U)? = null,
-        failMapper: (U.(Throwable) -> U)? = null,
-        endMapper: (U.() -> U)? = null,
-        onStart: (suspend () -> Unit)? = null,
-        onStart2: (suspend () -> Unit)? = null,
-        onFail: (suspend (Throwable) -> Unit)? = null,
-        onFail2: (suspend (Throwable) -> Unit)? = null,
-        onSuccess: (suspend (T) -> Unit)? = null,
-        onSuccess2: (suspend (T) -> Unit)? = null,
-        onEnd: (suspend () -> Unit)? = null,
-        block: suspend (U) -> T,
-    ): Job?
-
-    public suspend fun <T> startSuspendWork(
-        key: String,
+        key: String? = null,
         workStrategy: WorkStrategy = WorkStrategy.CancelCurrent,
+        canContinue: U.() -> Boolean = { true },
+        asyncMapper: U.(WorkAsync) -> U = { this },
         startMapper: (U.() -> U)? = null,
         successMapper: (U.(T) -> U)? = null,
         failMapper: (U.(Throwable) -> U)? = null,
         endMapper: (U.() -> U)? = null,
-        onStart: (suspend () -> Unit)? = null,
-        onStart2: (suspend () -> Unit)? = null,
-        onFail: (suspend (Throwable) -> Unit)? = null,
-        onFail2: (suspend (Throwable) -> Unit)? = null,
-        onSuccess: (suspend (T) -> Unit)? = null,
-        onSuccess2: (suspend (T) -> Unit)? = null,
-        onEnd: (suspend () -> Unit)? = null,
+        onStart: (suspend U.() -> Unit)? = null,
+        onStart2: (suspend U.() -> Unit)? = null,
+        onFail: (suspend U.(Throwable) -> Unit)? = null,
+        onFail2: (suspend U.(Throwable) -> Unit)? = null,
+        onSuccess: (suspend U.(T) -> Unit)? = null,
+        onSuccess2: (suspend U.(T) -> Unit)? = null,
+        onEnd: (suspend U.() -> Unit)? = null,
+        onEnd2: (suspend U.() -> Unit)? = null,
         block: suspend (U) -> T,
-    ): Job?
+    )
 
     public fun intent(vararg intent: I?)
 
@@ -74,7 +57,7 @@ public interface VMHandler<U : VMUI, I, A : VMAction, Args>
 
     public fun intentPaging(info: PagingIntent?)
 
-    public fun intentPagingRefresh()
+    public fun intentPagingRefresh(fromUI: Boolean = false, initPagingData: Boolean = false)
 
     public fun action(pipeline: Pipeline<U, I, A>, vararg action: A?)
 

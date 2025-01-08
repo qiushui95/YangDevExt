@@ -85,17 +85,17 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected suspend fun updateState(transform: suspend U.() -> U) {
+    private suspend fun updateState(transform: suspend U.() -> U) {
         (store as StateReceiver<U>).updateState(transform)
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected suspend fun withState(block: suspend U.() -> Unit) {
+    private suspend fun withState(block: suspend U.() -> Unit) {
         (store as StateReceiver<U>).withState(block)
     }
 
     @Suppress("UNCHECKED_CAST")
-    public val states: StateFlow<U> = (store as StateProvider<U>).states
+    public val states: StateFlow<U> by lazy { (store as StateProvider<U>).states }
 
     protected open fun StoreBuilder<U, I, A>.configFirst() {
     }
@@ -120,41 +120,45 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         intent.apply { reduce(pipeline) }
     }
 
-    public override suspend fun <R> withStateResult(block: suspend U.() -> R): R {
+    private suspend fun <R> withStateResult(block: suspend U.() -> R): R {
         var result: R? = null
-        withState {
-            result = block()
-        }
+
+        withState { result = block() }
 
         return result!!
     }
 
     private fun getFailBlock(
-        onFail: (suspend (Throwable) -> Unit)?,
-    ): (suspend (Throwable) -> Unit) {
-        return onFail ?: { this.intentError(it) }
+        onFail: (suspend U.(Throwable) -> Unit)?,
+    ): (suspend U.(Throwable) -> Unit) {
+        return onFail ?: { this@BaseViewModel.intentError(it) }
     }
 
     public override suspend fun <T> startSuspendWork(
-        key: String,
+        key: String?,
         workStrategy: WorkStrategy,
+        canContinue: U.() -> Boolean,
+        asyncMapper: U.(WorkAsync) -> U,
         startMapper: (U.() -> U)?,
         successMapper: (U.(T) -> U)?,
         failMapper: (U.(Throwable) -> U)?,
         endMapper: (U.() -> U)?,
-        onStart: (suspend () -> Unit)?,
-        onStart2: (suspend () -> Unit)?,
-        onFail: (suspend (Throwable) -> Unit)?,
-        onFail2: (suspend (Throwable) -> Unit)?,
-        onSuccess: (suspend (T) -> Unit)?,
-        onSuccess2: (suspend (T) -> Unit)?,
-        onEnd: (suspend () -> Unit)?,
+        onStart: (suspend U.() -> Unit)?,
+        onStart2: (suspend U.() -> Unit)?,
+        onFail: (suspend U.(Throwable) -> Unit)?,
+        onFail2: (suspend U.(Throwable) -> Unit)?,
+        onSuccess: (suspend U.(T) -> Unit)?,
+        onSuccess2: (suspend U.(T) -> Unit)?,
+        onEnd: (suspend U.() -> Unit)?,
+        onEnd2: (suspend U.() -> Unit)?,
         block: suspend (U) -> T,
-    ): Job? {
-        return workStrategyChecker.startCheck(workStrategy, key) { job ->
+    ): Unit = withState {
+        if (canContinue().not()) return@withState
+
+        workStrategyChecker.startCheck(workStrategy, key) { job ->
             doSuspendWork(
                 job = job,
-                asyncMapper = null,
+                asyncMapper = asyncMapper,
                 startMapper = startMapper,
                 successMapper = successMapper,
                 failMapper = failMapper,
@@ -162,45 +166,10 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
                 onStartList = listOfNotNull(onStart, onStart2),
                 onFailList = listOfNotNull(getFailBlock(onFail), onFail2),
                 onSuccessList = listOfNotNull(onSuccess, onSuccess2),
-                onEnd = onEnd,
+                onEndList = listOfNotNull(onEnd, onEnd2),
                 block = block,
             )
         }
-    }
-
-    public override suspend fun <T> startSuspendWork(
-        canContinue: U.() -> Boolean,
-        asyncMapper: U.(WorkAsync) -> U,
-        startMapper: (U.() -> U)?,
-        successMapper: (U.(T) -> U)?,
-        failMapper: (U.(Throwable) -> U)?,
-        endMapper: (U.() -> U)?,
-        onStart: (suspend () -> Unit)?,
-        onStart2: (suspend () -> Unit)?,
-        onFail: (suspend (Throwable) -> Unit)?,
-        onFail2: (suspend (Throwable) -> Unit)?,
-        onSuccess: (suspend (T) -> Unit)?,
-        onSuccess2: (suspend (T) -> Unit)?,
-        onEnd: (suspend () -> Unit)?,
-        block: suspend (U) -> T,
-    ): Job? {
-        val uiInfo = withStateResult { this }
-
-        if (uiInfo.canContinue().not()) return null
-
-        return doSuspendWork(
-            job = null,
-            asyncMapper = asyncMapper,
-            startMapper = startMapper,
-            successMapper = successMapper,
-            failMapper = failMapper,
-            endMapper = endMapper,
-            onStartList = listOfNotNull(onStart, onStart2),
-            onFailList = listOfNotNull(getFailBlock(onFail), onFail2),
-            onSuccessList = listOfNotNull(onSuccess, onSuccess2),
-            onEnd = onEnd,
-            block = block,
-        )
     }
 
     private suspend fun updateAsync(
@@ -219,14 +188,14 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         successMapper: (U.(T) -> U)?,
         failMapper: (U.(Throwable) -> U)?,
         endMapper: (U.() -> U)?,
-        onStartList: List<suspend () -> Unit>,
-        onFailList: List<suspend (Throwable) -> Unit>,
-        onSuccessList: List<(suspend (T) -> Unit)>,
-        onEnd: (suspend () -> Unit)?,
+        onStartList: List<suspend U.() -> Unit>,
+        onFailList: List<suspend U.(Throwable) -> Unit>,
+        onSuccessList: List<(suspend U.(T) -> Unit)>,
+        onEndList: List<(suspend U.() -> Unit)>,
         block: suspend (U) -> T,
     ) = viewModelScope.launch(Dispatchers.IO + (job ?: SupervisorJob())) {
         try {
-            onStartList.forEach { it.invoke() }
+            withState { onStartList.forEach { it.invoke(this) } }
 
             updateAsync(asyncMapper) { WorkAsync.Loading }
 
@@ -244,14 +213,14 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
 
             updateAsync(asyncMapper) { WorkAsync.Success }
 
-            onSuccessList.forEach { it.invoke(result) }
+            withState { onSuccessList.forEach { it.invoke(this, result) } }
         } catch (ex: Throwable) {
             updateAsync(asyncMapper) { WorkAsync.Fail(ex) }
 
             if (onFailList.isEmpty()) {
                 intentError(ex)
             } else {
-                onFailList.forEach { it(ex) }
+                withState { onFailList.forEach { it(ex) } }
             }
 
             if (failMapper != null) {
@@ -261,8 +230,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
             if (endMapper != null) {
                 updateState { endMapper() }
             }
-
-            onEnd?.invoke()
+            withState { onEndList.forEach { it(this) } }
         }
     }
 
@@ -319,14 +287,24 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         intervalJob.cancelChildren()
     }
 
-    override fun intent(vararg intent: I?) {
+    final override fun intent(vararg intent: I?) {
         viewModelScope.launch(iaDispatcher) {
             for (i in intent) {
                 i ?: continue
-                checkInterval(i) { store.intent(i) }
+                checkInterval(i) { tryIntent(i) }
             }
         }
     }
+
+    private fun tryIntent(intent: I) {
+        onIntentBefore(intent)
+        store.intent(intent)
+        onIntentAfter(intent)
+    }
+
+    protected open fun onIntentBefore(intent: I) {}
+
+    protected open fun onIntentAfter(intent: I) {}
 
     override fun intentCommon(info: CommonIntent?) {
         intent(provideCommonIntent(info ?: return))
@@ -348,8 +326,8 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         intent(provideCommonIntent(CommonIntent.OnPaging(info ?: return)))
     }
 
-    override fun intentPagingRefresh() {
-        intentPaging(PagingIntent.Refresh())
+    override fun intentPagingRefresh(fromUI: Boolean, initPagingData: Boolean) {
+        intentPaging(PagingIntent.Refresh(initPagingData = fromUI, fromUI = initPagingData))
     }
 
     override fun action(pipeline: Pipeline<U, I, A>, vararg action: A?) {
