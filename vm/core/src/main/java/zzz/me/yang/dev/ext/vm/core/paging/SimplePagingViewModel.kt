@@ -12,7 +12,7 @@ public abstract class SimplePagingViewModel<U, ITEM : PagingItem, I, A, Args>(
     initialUI: U,
 ) : BasePagingViewModel<U, ITEM, ITEM, I, A, Args>(koin, args, initialUI)
     where U : PagingUI<ITEM>, I : VMIntent<U, I, A, Args>, A : VMAction, Args : BasePageArgs {
-    override fun convert(uiInfo: U, itemInfo: ITEM): ITEM? {
+    override fun convert(uiInfo: U, itemInfo: ITEM, oldItem: ITEM?): ITEM? {
         return itemInfo
     }
 

@@ -1,19 +1,19 @@
 package zzz.me.yang.dev.ext.entity.paging
 
-public data class PagingResponse<T>(
-    val curPage: Int,
-    val hasMore: Boolean,
-    val list: List<T>,
-    val totalSize: Int,
-    val totalPage: Int,
-) {
-    public fun <R> convert(block: T.(Int) -> R?): PagingResponse<R> {
-        return PagingResponse(
-            curPage = curPage,
-            hasMore = hasMore,
-            list = list.mapIndexedNotNull { index, itemInfo -> itemInfo.block(index) },
-            totalSize = totalSize,
-            totalPage = totalPage,
-        )
-    }
+public interface PagingResponse<T : PagingItem> {
+    public val curPage: Int
+    public val hasMore: Boolean
+    public val list: List<T>
+    public val totalSize: Int
+    public val totalPage: Int
+
+    public fun <R : PagingItem> convert(block: T.() -> R?): PagingResponse<R>
+
+    public fun update(
+        curPage: Int = this.curPage,
+        hasMore: Boolean = this.hasMore,
+        list: List<T> = this.list,
+        totalSize: Int = this.totalSize,
+        totalPage: Int = this.totalPage,
+    ): PagingResponse<T>
 }

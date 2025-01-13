@@ -4,21 +4,19 @@ public data class PagingParam<T : PagingItem>(
     val loadPage: Int,
     val pageSize: Int,
     val oldList: List<T>,
+    val isRefresh: Boolean,
 ) {
-//    val isRefresh: Boolean
-//        get() = loadPage == PagingResponse.pageStart
-
     public fun convertResponse(
         hasMore: Boolean,
         newList: List<T>,
         totalSize: Int,
         totalPage: Int,
         curPage: Int = loadPage,
-    ): PagingResponse<T> {
+    ): SimplePagingResponse<T> {
         val totalList = oldList + newList
         val distinctList = totalList.distinctBy { it.uniqueId }
 
-        return PagingResponse(
+        return SimplePagingResponse(
             curPage = curPage,
             hasMore = hasMore,
             list = distinctList,
@@ -32,6 +30,7 @@ public data class PagingParam<T : PagingItem>(
             loadPage = loadPage,
             pageSize = pageSize,
             oldList = oldList.mapNotNull { it.block() },
+            isRefresh = isRefresh,
         )
     }
 }

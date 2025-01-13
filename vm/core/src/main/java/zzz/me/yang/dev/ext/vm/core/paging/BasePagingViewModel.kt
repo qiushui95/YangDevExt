@@ -63,9 +63,11 @@ public abstract class BasePagingViewModel<U, IT : PagingItem, IT2 : PagingItem, 
         }
     }
 
-    public abstract fun convert(uiInfo: U, itemInfo: IT2): IT?
+    public abstract fun convert(uiInfo: U, itemInfo: IT2, oldItem: IT?): IT?
 
     public abstract fun convert2(uiInfo: U, itemInfo: IT): IT2?
+
+    public open fun U.pagingSuccessMapper(response: PagingResponse<IT>): U = this
 
     public open suspend fun onPagingStart(pipeline: Pipeline<U, I, A>, intentFromUI: Boolean) {}
 
@@ -89,11 +91,13 @@ public abstract class BasePagingViewModel<U, IT : PagingItem, IT2 : PagingItem, 
         pipeline: Pipeline<U, I, A>,
         intentFromUI: Boolean,
         workStrategy: WorkStrategy,
-        pagingParam: U.() -> PagingParam<IT>,
+        isRefresh: Boolean,
     ) {
         startSuspendWork(
             key = KEY_PAGING,
             workStrategy = workStrategy,
+            canContinue = { canLoadPaging(this) && (isRefresh || pagingData.hasMore) },
+            successMapper = { pagingSuccessMapper(it) },
             onStart = { pagingData.updateWorkAsync(WorkAsync.Loading) },
             onStart2 = { onPagingStart(pipeline, intentFromUI) },
             onSuccess = { pagingData.updateByResponse(it) },
@@ -103,9 +107,14 @@ public abstract class BasePagingViewModel<U, IT : PagingItem, IT2 : PagingItem, 
             onEnd2 = { onPagingEnd(pipeline, intentFromUI) },
         ) { uiInfo ->
 
-            val param = uiInfo.pagingParam().convert { convert2(uiInfo, this) }
+            val param = uiInfo.pagingData.createPagingParam(isRefresh)
+                .convert { convert2(uiInfo, this) }
 
-            loadPagingResponse(uiInfo, param).convert { convert(uiInfo, this) }
+            loadPagingResponse(uiInfo, param).convert {
+                val oldItem = uiInfo.pagingData.itemList.firstOrNull { it.uniqueId == uniqueId }
+
+                convert(uiInfo, this, oldItem)
+            }
         }
     }
 
@@ -133,7 +142,7 @@ public abstract class BasePagingViewModel<U, IT : PagingItem, IT2 : PagingItem, 
             pipeline = pipeline,
             intentFromUI = intentFromUI,
             workStrategy = WorkStrategy.CancelBefore,
-            pagingParam = { pagingData.createRefreshParam() },
+            isRefresh = true,
         )
     }
 
@@ -142,7 +151,7 @@ public abstract class BasePagingViewModel<U, IT : PagingItem, IT2 : PagingItem, 
             pipeline = pipeline,
             intentFromUI = true,
             workStrategy = WorkStrategy.CancelCurrent,
-            pagingParam = { pagingData.createNextParam() },
+            isRefresh = false,
         )
     }
 }

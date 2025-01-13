@@ -94,19 +94,25 @@ public class PagingData<T : PagingItem>(
         _itemListState.value = block(itemList)
     }
 
-    internal fun createRefreshParam(): PagingParam<T> {
+    internal fun createPagingParam(isRefresh: Boolean): PagingParam<T> {
+        return if (isRefresh) createRefreshParam() else createNextParam()
+    }
+
+    private fun createRefreshParam(): PagingParam<T> {
         return PagingParam(
             loadPage = pageStart,
             pageSize = pageSize,
             oldList = emptyList(),
+            isRefresh = true,
         )
     }
 
-    internal fun createNextParam(): PagingParam<T> {
+    private fun createNextParam(): PagingParam<T> {
         return PagingParam(
             loadPage = curPage + 1,
             pageSize = pageSize,
             oldList = itemList,
+            isRefresh = false,
         )
     }
 
