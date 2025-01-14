@@ -69,7 +69,12 @@ public abstract class BasePagingViewModel<U, IT : PagingItem, IT2 : PagingItem, 
 
     public open fun U.pagingSuccessMapper(response: PagingResponse<IT>): U = this
 
-    public open suspend fun onPagingStart(pipeline: Pipeline<U, I, A>, intentFromUI: Boolean) {}
+    public open suspend fun onPagingStart(
+        pipeline: Pipeline<U, I, A>,
+        intentFromUI: Boolean,
+        isRefresh: Boolean,
+    ) {
+    }
 
     public open suspend fun onPagingSuccess(
         pipeline: Pipeline<U, I, A>,
@@ -99,7 +104,7 @@ public abstract class BasePagingViewModel<U, IT : PagingItem, IT2 : PagingItem, 
             canContinue = { canLoadPaging(this) && (isRefresh || pagingData.hasMore) },
             successMapper = { pagingSuccessMapper(it) },
             onStart = { pagingData.updateWorkAsync(WorkAsync.Loading) },
-            onStart2 = { onPagingStart(pipeline, intentFromUI) },
+            onStart2 = { onPagingStart(pipeline, intentFromUI, isRefresh) },
             onSuccess = { pagingData.updateByResponse(it) },
             onSuccess2 = { onPagingSuccess(pipeline, intentFromUI, it) },
             onFail = { pagingData.updateWorkAsync(WorkAsync.Fail(it)) },
