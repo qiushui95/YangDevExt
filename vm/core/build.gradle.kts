@@ -14,7 +14,7 @@ dependencies {
 
     implementation(libs.androidUtils)
 
-    implementation(libs.flowmvi.core)
+    api(libs.flowmvi.core)
 
     implementation(libs.koin.core)
 

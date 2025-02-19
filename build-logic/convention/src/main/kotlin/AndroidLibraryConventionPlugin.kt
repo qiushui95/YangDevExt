@@ -1,5 +1,4 @@
 import com.android.build.gradle.LibraryExtension
-import nbe.someone.code.configAndroidTest
 import nbe.someone.code.configSamePlugins
 import nbe.someone.code.configSpotless
 import nbe.someone.code.configureKotlin
@@ -27,8 +26,6 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                 configureKotlinAndroid(this)
                 defaultConfig.consumerProguardFiles("consumer-rules.pro")
                 defaultConfig.targetSdk = 35
-
-                configAndroidTest(defaultConfig)
             }
 
             configSpotless()

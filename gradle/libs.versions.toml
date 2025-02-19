@@ -2,16 +2,6 @@
 #http://Nothing
 agp = "8.8.0"
 
-#https://github.com/mannodermaus/android-junit5
-android-junit5 = "1.11.2.0"
-
-#https://developer.android.com/jetpack/androidx/releases/test
-##https://mvnrepository.com/artifact/androidx.test.uiautomator/uiautomator
-androidtest = "1.6.1"
-androidtest-espresso = "3.6.1"
-androidtest-junit-ext = "1.2.1"
-androidtest-uiautomator = "2.3.0"
-
 #https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/README-CN.md
 androidutils = "1.31.1"
 
@@ -61,7 +51,6 @@ spotless = "6.25.0"
 
 
 [plugins]
-android-junit5 = { id = "de.mannodermaus.android-junit5", version.ref = "android-junit5" }
 application = { id = "com.android.application", version.ref = "agp" }
 compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -80,18 +69,6 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 #https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/README-CN.md
 androidUtils = { module = "com.blankj:utilcodex", version.ref = "androidutils" }
 
-#https://developer.android.com/jetpack/androidx/releases/test
-androidtest-core = { module = "androidx.test:core-ktx", version.ref = "androidtest" }
-androidtest-espresso = { module = "androidx.test.espresso:espresso-core", version.ref = "androidtest-espresso" }
-androidtest-rules = { module = "androidx.test:rules", version.ref = "androidtest" }
-androidtest-runner = { module = "androidx.test:runner", version.ref = "androidtest" }
-
-#https://mvnrepository.com/artifact/androidx.test.ext/junit-ktx
-androidtest-junit-ext = { module = "androidx.test.ext:junit-ktx", version.ref = "androidtest-junit-ext" }
-
-#https://developer.android.com/jetpack/androidx/releases/test-uiautomator
-androidtest-uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "androidtest-uiautomator" }
-
 #https://developer.android.com/jetpack/androidx/releases/compose
 compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose-core" }
 compose-graphics = { module = "androidx.compose.ui:ui-graphics", version.ref = "compose-core" }
@@ -105,7 +82,6 @@ compose-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "co
 compose-ui = { module = "androidx.compose.ui:ui", version.ref = "compose-core" }
 
 #https://github.com/Kotlin/kotlinx.coroutines
-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 
@@ -113,11 +89,9 @@ coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", ve
 flowmvi-android = { module = "pro.respawn.flowmvi:android", version.ref = "flowmvi" }
 flowmvi-compose = { module = "pro.respawn.flowmvi:compose", version.ref = "flowmvi" }
 flowmvi-core = { module = "pro.respawn.flowmvi:core", version.ref = "flowmvi" }
-flowmvi-savedstate = { module = "pro.respawn.flowmvi:savedstate", version.ref = "flowmvi" }
 
 #https://developer.android.com/jetpack/androidx/releases/fragment
 fragment-core = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment" }
-fragment-test = { module = "androidx.fragment:fragment-testing", version.ref = "fragment" }
 
 #http://Nothing
 gradlePlugin-android = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
@@ -135,22 +109,11 @@ gradlePlugin-spotless = { group = "com.diffplug.spotless", name = "spotless-plug
 jodatime = { module = "joda-time:joda-time", version.ref = "jodatime" }
 
 #https://github.com/InsertKoinIO/koin
-koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
-koin-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
-koin-vm = { module = "io.insert-koin:koin-core-viewmodel", version.ref = "koin" }
-
-#https://github.com/pinterest/ktlint
-ktlint = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
 
 #https://developer.android.com/jetpack/androidx/releases/lifecycle
-lifecycle-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
-lifecycle-compose-android = { module = "androidx.lifecycle:lifecycle-runtime-compose-android", version.ref = "lifecycle" }
-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle" }
 lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
-lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycle" }
 lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
-lifecycle-viewmodel-savedstate = { module = "androidx.lifecycle:lifecycle-viewmodel-savedstate", version.ref = "lifecycle" }
 
 #https://github.com/square/moshi
 moshi-core = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }

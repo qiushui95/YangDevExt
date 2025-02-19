@@ -10,6 +10,5 @@ internal fun Project.configSamePlugins() {
     with(pluginManager) {
         apply(libs.findPlugin("kotlin-android").get().get().pluginId)
         apply(libs.findPlugin("spotless").get().get().pluginId)
-        apply(libs.findPlugin("android-junit5").get().get().pluginId)
     }
 }
