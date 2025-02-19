@@ -28,6 +28,7 @@ public interface VMHandler<U : VMUI, I, A : VMAction, Args>
     public suspend fun handleCommonIntent(pipeline: Pipeline<U, I, A>, intent: CommonIntent)
 
     public suspend fun <T> startSuspendWork(
+        pipeline: Pipeline<U, I, A>,
         key: String? = null,
         workStrategy: WorkStrategy = WorkStrategy.CancelCurrent,
         canContinue: U.() -> Boolean = { true },

@@ -15,11 +15,11 @@ import org.koin.core.Koin
 import pro.respawn.flowmvi.api.ActionShareBehavior
 import pro.respawn.flowmvi.api.PipelineContext
 import pro.respawn.flowmvi.api.StateProvider
-import pro.respawn.flowmvi.api.StateReceiver
 import pro.respawn.flowmvi.api.Store
 import pro.respawn.flowmvi.dsl.StoreBuilder
 import pro.respawn.flowmvi.dsl.StoreConfigurationBuilder
 import pro.respawn.flowmvi.dsl.lazyStore
+import pro.respawn.flowmvi.dsl.state
 import pro.respawn.flowmvi.plugins.recover
 import pro.respawn.flowmvi.plugins.reduce
 import zzz.me.yang.dev.ext.vm.core.action.CommonAction
@@ -84,17 +84,6 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         intentCapacity = ActionShareBehavior.DefaultBufferSize
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private suspend fun updateState(transform: suspend U.() -> U) {
-        (store as StateReceiver<U>).updateState(transform)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private suspend fun withState(block: suspend U.() -> Unit) {
-        (store as StateReceiver<U>).withState(block)
-    }
-
-    @Suppress("UNCHECKED_CAST")
     public val states: StateFlow<U> by lazy { (store as StateProvider<U>).states }
 
     protected open fun StoreBuilder<U, I, A>.configFirst() {
@@ -120,14 +109,6 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         intent.apply { reduce(pipeline) }
     }
 
-    private suspend fun <R> withStateResult(block: suspend U.() -> R): R {
-        var result: R? = null
-
-        withState { result = block() }
-
-        return result!!
-    }
-
     private fun getFailBlock(
         onFail: (suspend U.(Throwable) -> Unit)?,
     ): (suspend U.(Throwable) -> Unit) {
@@ -135,6 +116,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     }
 
     public override suspend fun <T> startSuspendWork(
+        pipeline: Pipeline<U, I, A>,
         key: String?,
         workStrategy: WorkStrategy,
         canContinue: U.() -> Boolean,
@@ -152,11 +134,12 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         onEnd: (suspend U.() -> Unit)?,
         onEnd2: (suspend U.() -> Unit)?,
         block: suspend (U) -> T,
-    ): Unit = withState {
-        if (canContinue().not()) return@withState
+    ) {
+        if (pipeline.state.canContinue().not()) return
 
         workStrategyChecker.startCheck(workStrategy, key) { job ->
             doSuspendWork(
+                pipeline = pipeline,
                 job = job,
                 asyncMapper = asyncMapper,
                 startMapper = startMapper,
@@ -172,7 +155,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         }
     }
 
-    private suspend fun updateAsync(
+    private suspend fun Pipeline<U, I, A>.updateAsync(
         asyncMapper: (U.(WorkAsync) -> U)?,
         asyncBlock: () -> WorkAsync,
     ) {
@@ -182,6 +165,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
     }
 
     private fun <T> doSuspendWork(
+        pipeline: Pipeline<U, I, A>,
         job: Job?,
         asyncMapper: (U.(WorkAsync) -> U)?,
         startMapper: (U.() -> U)?,
@@ -195,42 +179,40 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         block: suspend (U) -> T,
     ) = viewModelScope.launch(Dispatchers.IO + (job ?: SupervisorJob())) {
         try {
-            withState { onStartList.forEach { it.invoke(this) } }
+            pipeline.withState { onStartList.forEach { it.invoke(this) } }
 
-            updateAsync(asyncMapper) { WorkAsync.Loading }
+            pipeline.updateAsync(asyncMapper) { WorkAsync.Loading }
 
             if (startMapper != null) {
-                updateState { startMapper() }
+                pipeline.updateState { startMapper() }
             }
 
-            val uiInfo = withStateResult { this }
-
-            val result = block(uiInfo)
+            val result = block(pipeline.state)
 
             if (successMapper != null) {
-                updateState { successMapper(result) }
+                pipeline.updateState { successMapper(result) }
             }
 
-            updateAsync(asyncMapper) { WorkAsync.Success }
+            pipeline.updateAsync(asyncMapper) { WorkAsync.Success }
 
-            withState { onSuccessList.forEach { it.invoke(this, result) } }
+            pipeline.withState { onSuccessList.forEach { it.invoke(this, result) } }
         } catch (ex: Throwable) {
-            updateAsync(asyncMapper) { WorkAsync.Fail(ex) }
+            pipeline.updateAsync(asyncMapper) { WorkAsync.Fail(ex) }
 
             if (onFailList.isEmpty()) {
                 intentError(ex)
             } else {
-                withState { onFailList.forEach { it(ex) } }
+                pipeline.withState { onFailList.forEach { it(ex) } }
             }
 
             if (failMapper != null) {
-                updateState { failMapper(ex) }
+                pipeline.updateState { failMapper(ex) }
             }
         } finally {
             if (endMapper != null) {
-                updateState { endMapper() }
+                pipeline.updateState { endMapper() }
             }
-            withState { onEndList.forEach { it(this) } }
+            pipeline.withState { onEndList.forEach { it(this) } }
         }
     }
 

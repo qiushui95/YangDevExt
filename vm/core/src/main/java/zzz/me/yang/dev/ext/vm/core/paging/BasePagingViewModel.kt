@@ -99,6 +99,7 @@ public abstract class BasePagingViewModel<U, IT : PagingItem, IT2 : PagingItem, 
         isRefresh: Boolean,
     ) {
         startSuspendWork(
+            pipeline = pipeline,
             key = KEY_PAGING,
             workStrategy = workStrategy,
             canContinue = { canLoadPaging(this) && (isRefresh || pagingData.hasMore) },
