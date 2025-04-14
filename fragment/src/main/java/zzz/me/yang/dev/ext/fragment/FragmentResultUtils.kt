@@ -78,14 +78,8 @@ public object FragmentResultUtils {
     private val lifecycleObserver by lazy {
         object : DefaultLifecycleObserver {
             override fun onDestroy(owner: LifecycleOwner) {
-                val ownerId = "_${System.identityHashCode(owner)}_"
-
+                val ownerId = "${System.identityHashCode(owner)}"
                 doWithListenerMap { map ->
-                    for (key in map.keys) {
-                        if (ownerId !in key) continue
-
-                        map.remove(key)
-                    }
 
                     val iterator = map.iterator()
 
