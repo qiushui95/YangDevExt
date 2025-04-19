@@ -316,10 +316,14 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         viewModelScope.launch(iaDispatcher) {
             for (a in action) {
                 a ?: continue
-                checkInterval(a) { pipeline.action(a) }
+                checkInterval(a) { onActionBefore(a); pipeline.action(a); onActionAfter(a) }
             }
         }
     }
+
+    protected open fun onActionBefore(action: A) {}
+
+    protected open fun onActionAfter(action: A) {}
 
     override fun actionCommon(pipeline: Pipeline<U, I, A>, info: CommonAction?) {
         action(pipeline, provideCommonAction(info ?: return))
