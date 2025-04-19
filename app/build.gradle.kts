@@ -32,5 +32,11 @@ android {
 }
 
 dependencies {
-
+    implementation(projects.coroutines)
+    implementation(projects.fragment)
+    implementation(projects.moshi)
+    implementation(projects.normal)
+    implementation(projects.vm.core)
+    implementation(projects.vm.ext)
+    implementation(projects.entity.paging)
 }
