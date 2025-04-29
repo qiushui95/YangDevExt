@@ -27,6 +27,19 @@ public sealed class CommonIntent : IntervalWork {
         }
     }
 
+    public data class TrackLifecycle(
+        val event: Event,
+        val timestamp: Long = now()
+    ) : CommonIntent() {
+        override fun getIntervalKey(): String {
+            return "Intent_Common_Lifecycle_${event.name}"
+        }
+
+        override fun getInterval(): Long {
+            return 50L
+        }
+    }
+
     public data class OnInit(val timestamp: Long = now()) : CommonIntent() {
         override fun getIntervalKey(): String {
             return "Intent_Common_Init"

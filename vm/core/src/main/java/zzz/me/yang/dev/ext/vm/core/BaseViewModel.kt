@@ -38,6 +38,8 @@ import zzz.me.yang.dev.ext.vm.core.work.WorkStrategy
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategyChecker
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategyCheckerImpl
 
+private typealias Event = Lifecycle.Event
+
 public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
     private val koin: Koin,
     private val args: Args,
@@ -236,7 +238,12 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         when (intent) {
             is CommonIntent.OnError -> reduceError(pipeline, intent.error)
             is CommonIntent.OnInit -> reduceInit(pipeline)
-            is CommonIntent.OnLifecycle -> reduceLifecycle(pipeline, intent.event)
+            is CommonIntent.TrackLifecycle -> trackLifecycle(pipeline, intent.event)
+            is CommonIntent.OnLifecycle -> {
+                trackLifecycle(pipeline, intent.event)
+                reduceLifecycle(pipeline, intent.event)
+            }
+
             is CommonIntent.OnBackPressed -> reduceBack(pipeline)
             is CommonIntent.OnPaging -> {}
         }
@@ -385,10 +392,10 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
 
     protected open suspend fun reduceInit(pipeline: Pipeline<U, I, A>) {}
 
-    protected open suspend fun reduceLifecycle(
-        pipeline: Pipeline<U, I, A>,
-        event: Lifecycle.Event,
-    ) {
+    protected open suspend fun trackLifecycle(pipeline: Pipeline<U, I, A>, event: Event) {
+    }
+
+    protected open suspend fun reduceLifecycle(pipeline: Pipeline<U, I, A>, event: Event) {
     }
 
     protected open suspend fun reduceBack(pipeline: Pipeline<U, I, A>) {
