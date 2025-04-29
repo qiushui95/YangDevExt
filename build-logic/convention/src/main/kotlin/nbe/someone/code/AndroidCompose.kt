@@ -35,7 +35,7 @@ internal fun Project.configureAndroidCompose(commonExtension: CommonExtension<*,
         }
     }
 
-    task("copyAndDealComposeMetrics") {
+    tasks.register("copyAndDealComposeMetrics") {
         doLast {
 
             val srcDir = project.layout.buildDirectory.dir("compose_metrics").get().asFile
