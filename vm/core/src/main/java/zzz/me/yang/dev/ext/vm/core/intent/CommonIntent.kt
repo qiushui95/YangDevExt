@@ -10,7 +10,7 @@ private typealias Intent = CommonIntent
 public sealed class CommonIntent : IntervalWork {
     public data class OnError(val error: Throwable) : Intent() {
         override fun getIntervalKey(): String {
-            return "Intent_Common_Error"
+            return "Common_Intent_On_Error"
         }
 
         override fun getInterval(): Long {
@@ -20,27 +20,23 @@ public sealed class CommonIntent : IntervalWork {
 
     public data class OnLifecycle(val event: Event, val timestamp: Long = now()) : Intent() {
         override fun getIntervalKey(): String {
-            return "Intent_Common_Lifecycle_${event.name}"
+            return "Common_Intent_On_Lifecycle"
         }
 
-        override fun getInterval(): Long {
-            return 50L
-        }
+        override fun getInterval(): Long = 0
     }
 
     public data class TrackLifecycle(val event: Event, val timestamp: Long = now()) : Intent() {
         override fun getIntervalKey(): String {
-            return "Intent_Common_Lifecycle_${event.name}"
+            return "Common_Intent_Track_Lifecycle"
         }
 
-        override fun getInterval(): Long {
-            return 50L
-        }
+        override fun getInterval(): Long = 0
     }
 
     public data class OnInit(val timestamp: Long = now()) : Intent() {
         override fun getIntervalKey(): String {
-            return "Intent_Common_Init"
+            return "Common_Intent_Init"
         }
 
         override fun getInterval(): Long {
@@ -50,7 +46,7 @@ public sealed class CommonIntent : IntervalWork {
 
     public data class OnBackPressed(val timestamp: Long = now()) : Intent() {
         override fun getIntervalKey(): String {
-            return "Intent_Common_Back"
+            return "Common_Intent_Back"
         }
 
         override fun getInterval(): Long {
@@ -60,7 +56,7 @@ public sealed class CommonIntent : IntervalWork {
 
     public data class OnPaging(val pagingIntent: PagingIntent) : Intent() {
         override fun getIntervalKey(): String {
-            return "Intent_Common_Paging"
+            return "Common_Intent_Paging"
         }
 
         override fun getInterval(): Long {
