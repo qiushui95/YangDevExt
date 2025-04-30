@@ -239,11 +239,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
             is CommonIntent.OnError -> reduceError(pipeline, intent.error)
             is CommonIntent.OnInit -> reduceInit(pipeline)
             is CommonIntent.TrackLifecycle -> trackLifecycle(pipeline, intent.event)
-            is CommonIntent.OnLifecycle -> {
-                trackLifecycle(pipeline, intent.event)
-                reduceLifecycle(pipeline, intent.event)
-            }
-
+            is CommonIntent.OnLifecycle -> reduceLifecycle(pipeline, intent.event)
             is CommonIntent.OnBackPressed -> reduceBack(pipeline)
             is CommonIntent.OnPaging -> {}
         }
