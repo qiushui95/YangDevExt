@@ -35,7 +35,6 @@ public class PriorityTaskQueue(
             doWithTaskList {
                 add(TaskInfo(priority, task))
                 sortBy { it.priority.sort }
-                map { it.priority }
             }
 
             processNextTask()

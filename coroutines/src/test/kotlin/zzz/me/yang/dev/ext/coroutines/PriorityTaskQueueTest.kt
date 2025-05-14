@@ -28,32 +28,32 @@ internal class PriorityTaskQueueTest {
 
         val queue = PriorityTaskQueue(scope)
 
-        scope.launch(Dispatchers.IO) {
-            repeat(3) {
-                delay(800)
-                log("新增High任务$it")
-                queue.addTask(PriorityTaskQueue.Priority.High) {
-                    log("执行High任务$it")
-                    delay(1000)
-                    log("结束High任务$it")
-                }
-            }
-        }
-
-        scope.launch(Dispatchers.IO) {
-            repeat(4) {
-                delay(400)
-                log("新增Normal任务$it")
-                queue.addTask(PriorityTaskQueue.Priority.Normal) {
-                    log("执行Normal任务$it")
-                    delay(500)
-                    if (throwError && it == 2) {
-                        throw RuntimeException("测试异常")
-                    }
-                    log("结束Normal任务$it")
-                }
-            }
-        }
+//        scope.launch(Dispatchers.IO) {
+//            repeat(3) {
+//                delay(800)
+//                log("新增High任务$it")
+//                queue.addTask(PriorityTaskQueue.Priority.High) {
+//                    log("执行High任务$it")
+//                    delay(1000)
+//                    log("结束High任务$it")
+//                }
+//            }
+//        }
+//
+//        scope.launch(Dispatchers.IO) {
+//            repeat(4) {
+//                delay(400)
+//                log("新增Normal任务$it")
+//                queue.addTask(PriorityTaskQueue.Priority.Normal) {
+//                    log("执行Normal任务$it")
+//                    delay(500)
+//                    if (throwError && it == 2) {
+//                        throw RuntimeException("测试异常")
+//                    }
+//                    log("结束Normal任务$it")
+//                }
+//            }
+//        }
 
         scope.launch(Dispatchers.IO) {
             repeat(5) {
