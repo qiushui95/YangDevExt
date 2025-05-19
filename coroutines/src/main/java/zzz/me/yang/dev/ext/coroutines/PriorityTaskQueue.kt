@@ -12,6 +12,7 @@ import kotlinx.coroutines.sync.withLock
 public class PriorityTaskQueue(
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val logger: (String) -> Unit = {},
 ) {
     public sealed class Priority(internal val sort: Int) {
         public data object High : Priority(1)
@@ -21,7 +22,11 @@ public class PriorityTaskQueue(
         public data object Low : Priority(3)
     }
 
-    private data class TaskInfo(val priority: Priority, val task: suspend () -> Unit)
+    private data class TaskInfo(
+        val taskId: String,
+        val priority: Priority,
+        val task: suspend () -> Unit,
+    )
 
     private val mutex = Mutex()
     private val taskList = mutableListOf<TaskInfo>()
@@ -30,10 +35,10 @@ public class PriorityTaskQueue(
         return mutex.withLock { block(taskList) }
     }
 
-    public fun addTask(priority: Priority, task: suspend () -> Unit) {
+    public fun addTask(taskId: String, priority: Priority, task: suspend () -> Unit) {
         scope.launch(Dispatchers.Default) {
             doWithTaskList {
-                add(TaskInfo(priority, task))
+                add(TaskInfo(taskId, priority, task))
                 sortBy { it.priority.sort }
             }
 
@@ -41,20 +46,20 @@ public class PriorityTaskQueue(
         }
     }
 
-    private val processMutex = Mutex()
+    private val workingJob by lazy { SupervisorJob() }
 
     public fun processNextTask() {
-        scope.launch(dispatcher) {
+        for (childJob in workingJob.children) {
+            if (childJob.isActive) return
+        }
+
+        scope.launch(dispatcher + workingJob + CoroutineExceptionHandler { _, _ -> }) {
             tryNextTask(this)
         }
     }
 
     private suspend fun tryNextTask(scope: CoroutineScope) {
-        if (processMutex.tryLock().not()) return
-
         val hasMoreTask = startNextTask(scope)
-
-        processMutex.unlock()
 
         if (hasMoreTask) tryNextTask(scope)
     }
@@ -65,8 +70,11 @@ public class PriorityTaskQueue(
 
     private suspend fun startNextTask(scope: CoroutineScope): Boolean {
         val taskInfo = doWithTaskList {
+            logger("start task list size: ${map { it.taskId }}")
             runCatching { removeAt(0) }.getOrNull()
         }
+
+        logger("start task ${taskInfo?.taskId}")
 
         taskInfo ?: return false
 
