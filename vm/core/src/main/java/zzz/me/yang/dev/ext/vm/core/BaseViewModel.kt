@@ -38,7 +38,9 @@ import zzz.me.yang.dev.ext.vm.core.work.WorkStrategy
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategyChecker
 import zzz.me.yang.dev.ext.vm.core.work.WorkStrategyCheckerImpl
 
-private typealias Event = Lifecycle.Event
+private typealias OnError = CommonIntent.OnError
+private typealias OnLifecycle = CommonIntent.OnLifecycle
+private typealias TrackLifecycle = CommonIntent.TrackLifecycle
 
 public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageArgs>(
     private val koin: Koin,
@@ -236,10 +238,10 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         intent: CommonIntent,
     ) {
         when (intent) {
-            is CommonIntent.OnError -> reduceError(pipeline, intent.error)
+            is CommonIntent.OnError -> reduceError(pipeline, intent)
             is CommonIntent.OnInit -> reduceInit(pipeline)
-            is CommonIntent.TrackLifecycle -> trackLifecycle(pipeline, intent.event)
-            is CommonIntent.OnLifecycle -> reduceLifecycle(pipeline, intent.event)
+            is CommonIntent.TrackLifecycle -> trackLifecycle(pipeline, intent)
+            is CommonIntent.OnLifecycle -> reduceLifecycle(pipeline, intent)
             is CommonIntent.OnBackPressed -> reduceBack(pipeline)
             is CommonIntent.OnPaging -> {}
         }
@@ -380,18 +382,18 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         intentCommon(CommonIntent.OnLifecycle(event))
     }
 
-    protected open suspend fun reduceError(pipeline: Pipeline<U, I, A>, error: Throwable) {
-        error.printStackTrace()
+    protected open suspend fun reduceError(pipeline: Pipeline<U, I, A>, intent: OnError) {
+        intent.error.printStackTrace()
 
-        actionCommon(pipeline, CommonAction.Error(error))
+        actionCommon(pipeline, CommonAction.Error(intent.error))
     }
 
     protected open suspend fun reduceInit(pipeline: Pipeline<U, I, A>) {}
 
-    protected open suspend fun trackLifecycle(pipeline: Pipeline<U, I, A>, event: Event) {
+    protected open suspend fun trackLifecycle(pipeline: Pipeline<U, I, A>, intent: TrackLifecycle) {
     }
 
-    protected open suspend fun reduceLifecycle(pipeline: Pipeline<U, I, A>, event: Event) {
+    protected open suspend fun reduceLifecycle(pipeline: Pipeline<U, I, A>, intent: OnLifecycle) {
     }
 
     protected open suspend fun reduceBack(pipeline: Pipeline<U, I, A>) {
