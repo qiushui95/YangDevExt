@@ -9,20 +9,34 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+private typealias TaskInfoList = MutableList<PriorityTaskQueue.TaskInfo>
+
 public class PriorityTaskQueue(
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val logger: (String) -> Unit = {},
 ) {
     public sealed class Priority(internal val sort: Int) {
-        public data object High : Priority(1)
+        public data object Max : Priority(0)
 
-        public data object Normal : Priority(2)
+        public data object High : Priority(Int.MAX_VALUE / 4)
 
-        public data object Low : Priority(3)
+        public data object Normal : Priority(Int.MAX_VALUE / 3)
+
+        public data object Low : Priority(Int.MAX_VALUE / 2)
+
+        public data object Min : Priority(Int.MAX_VALUE)
+
+        public class Custom(sort: Int) : Priority(sort) {
+            init {
+                require(sort > 0 && sort < Int.MAX_VALUE) {
+                    "Custom priority sort must in range (0,Int.MAX_VALUE)"
+                }
+            }
+        }
     }
 
-    private data class TaskInfo(
+    internal data class TaskInfo(
         val taskId: String,
         val priority: Priority,
         val task: suspend () -> Unit,
@@ -37,13 +51,20 @@ public class PriorityTaskQueue(
 
     public fun addTask(taskId: String, priority: Priority, task: suspend () -> Unit) {
         scope.launch(Dispatchers.Default) {
-            doWithTaskList {
-                add(TaskInfo(taskId, priority, task))
-                sortBy { it.priority.sort }
-            }
+            doWithTaskList { this.addTask(taskId, priority, task) }
 
             processNextTask()
         }
+    }
+
+    private fun TaskInfoList.addTask(taskId: String, priority: Priority, task: suspend () -> Unit) {
+        for (taskInfo in this) {
+            if (taskInfo.taskId == taskId) return
+        }
+
+        add(TaskInfo(taskId, priority, task))
+
+        sortBy { it.priority.sort }
     }
 
     private val workingJob by lazy { SupervisorJob() }
