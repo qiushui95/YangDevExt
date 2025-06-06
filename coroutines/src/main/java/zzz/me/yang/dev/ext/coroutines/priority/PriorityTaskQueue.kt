@@ -1,4 +1,4 @@
-package zzz.me.yang.dev.ext.coroutines
+package zzz.me.yang.dev.ext.coroutines.priority
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -10,32 +10,14 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 private typealias TaskInfoList = MutableList<PriorityTaskQueue.TaskInfo>
+private typealias Priority = PriorityTaskPriority
+private typealias Strategy = PriorityTaskStrategy
 
 public class PriorityTaskQueue(
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val logger: (String) -> Unit = {},
 ) {
-    public sealed class Priority(internal val sort: Int) {
-        public data object Max : Priority(0)
-
-        public data object High : Priority(Int.MAX_VALUE / 4)
-
-        public data object Normal : Priority(Int.MAX_VALUE / 3)
-
-        public data object Low : Priority(Int.MAX_VALUE / 2)
-
-        public data object Min : Priority(Int.MAX_VALUE)
-
-        public class Custom(sort: Int) : Priority(sort) {
-            init {
-                require(sort > 0 && sort < Int.MAX_VALUE) {
-                    "Custom priority sort must in range (0,Int.MAX_VALUE)"
-                }
-            }
-        }
-    }
-
     internal data class TaskInfo(
         val taskId: String,
         val priority: Priority,
@@ -49,20 +31,29 @@ public class PriorityTaskQueue(
         return mutex.withLock { block(taskList) }
     }
 
-    public fun addTask(taskId: String, priority: Priority, task: suspend () -> Unit) {
+    public fun addTask(
+        taskId: String,
+        priority: Priority,
+        strategy: Strategy,
+        task: suspend () -> Unit,
+    ) {
         scope.launch(Dispatchers.Default) {
-            doWithTaskList { this.addTask(taskId, priority, task) }
+            doWithTaskList { this.addTask(TaskInfo(taskId, priority, task), strategy) }
 
             processNextTask()
         }
     }
 
-    private fun TaskInfoList.addTask(taskId: String, priority: Priority, task: suspend () -> Unit) {
-        for (taskInfo in this) {
-            if (taskInfo.taskId == taskId) return
+    private fun TaskInfoList.addTask(taskInfo: TaskInfo, strategy: Strategy) {
+        val sameIdList = filter { it.taskId == taskInfo.taskId }
+
+        when (strategy) {
+            PriorityTaskStrategy.NoCheck -> {}
+            PriorityTaskStrategy.Replace -> removeAll(sameIdList)
+            PriorityTaskStrategy.Skip -> return
         }
 
-        add(TaskInfo(taskId, priority, task))
+        add(taskInfo)
 
         sortBy { it.priority.sort }
     }
