@@ -16,6 +16,7 @@ private typealias Strategy = PriorityTaskStrategy
 public class PriorityTaskQueue(
     private val scope: CoroutineScope,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val defaultStrategy: Strategy = PriorityTaskStrategy.Skip,
     private val logger: (String) -> Unit = {},
 ) {
     internal data class TaskInfo(
@@ -33,8 +34,8 @@ public class PriorityTaskQueue(
 
     public fun addTask(
         taskId: String,
-        priority: Priority,
-        strategy: Strategy,
+        priority: Priority = PriorityTaskPriority.Normal,
+        strategy: Strategy = defaultStrategy,
         task: suspend () -> Unit,
     ) {
         scope.launch(Dispatchers.Default) {
@@ -47,10 +48,12 @@ public class PriorityTaskQueue(
     private fun TaskInfoList.addTask(taskInfo: TaskInfo, strategy: Strategy) {
         val sameIdList = filter { it.taskId == taskInfo.taskId }
 
-        when (strategy) {
-            PriorityTaskStrategy.NoCheck -> {}
-            PriorityTaskStrategy.Replace -> removeAll(sameIdList)
-            PriorityTaskStrategy.Skip -> return
+        if (sameIdList.isNotEmpty()) {
+            when (strategy) {
+                PriorityTaskStrategy.NoCheck -> {}
+                PriorityTaskStrategy.Replace -> removeAll(sameIdList)
+                PriorityTaskStrategy.Skip -> return
+            }
         }
 
         add(taskInfo)
