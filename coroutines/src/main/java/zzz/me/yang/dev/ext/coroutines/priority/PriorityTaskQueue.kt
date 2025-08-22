@@ -51,8 +51,15 @@ public class PriorityTaskQueue(
         if (sameIdList.isNotEmpty()) {
             when (strategy) {
                 PriorityTaskStrategy.NoCheck -> {}
-                PriorityTaskStrategy.Replace -> removeAll(sameIdList)
-                PriorityTaskStrategy.Skip -> return
+                PriorityTaskStrategy.Replace -> {
+                    logger("has same id(${taskInfo.taskId}) task, remove all")
+                    removeAll(sameIdList)
+                }
+
+                PriorityTaskStrategy.Skip -> {
+                    logger("has same id(${taskInfo.taskId}) task, skip cur")
+                    return
+                }
             }
         }
 
