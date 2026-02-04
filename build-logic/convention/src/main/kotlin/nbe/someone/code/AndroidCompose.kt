@@ -3,30 +3,23 @@ package nbe.someone.code
 import com.android.build.api.dsl.CommonExtension
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.getByType
 import java.io.File
 
 /**
  * Configure Compose-specific options
  */
-internal fun Project.configureAndroidCompose(commonExtension: CommonExtension<*, *, *, *, *, *>) {
+internal fun Project.configureAndroidCompose(commonExtension: CommonExtension) {
     val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
     pluginManager.apply(libs.findPlugin("compose").get().get().pluginId)
 
     commonExtension.apply {
-        buildFeatures {
+        buildFeatures.apply {
             compose = true
         }
 
-        kotlinOptions {
-            compilerOptions {
-                freeCompilerArgs.addAll(buildComposeMetricsParameters())
-            }
-        }
-
-        dependencies {
+        dependencies.apply{
             add("implementation", libs.findLibrary("compose-foundation").get())
             add("implementation", libs.findLibrary("compose-material3").get())
             add("implementation", libs.findLibrary("compose-preview").get())
@@ -85,26 +78,4 @@ internal fun Project.configureAndroidCompose(commonExtension: CommonExtension<*,
             }
         }
     }
-}
-
-private fun Project.buildComposeMetricsParameters(): List<String> {
-
-    val metricParameters = mutableListOf<String>()
-    val enableMetricsProvider = project.providers.gradleProperty("enableComposeCompilerMetrics")
-
-    if (enableMetricsProvider.orNull == "true") {
-
-        val metricsFolder = project.layout.buildDirectory.dir("compose_metrics").get().asFile
-        metricParameters.add("-P")
-        metricParameters.add(
-            "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=" + metricsFolder.absolutePath
-        )
-
-        metricParameters.add("-P")
-        metricParameters.add(
-            "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=" + metricsFolder.absolutePath
-        )
-    }
-
-    return metricParameters.toList()
 }

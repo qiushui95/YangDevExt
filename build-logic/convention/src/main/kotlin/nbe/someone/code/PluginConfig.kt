@@ -8,7 +8,6 @@ internal fun Project.configSamePlugins() {
     val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
     with(pluginManager) {
-        apply(libs.findPlugin("kotlin-android").get().get().pluginId)
         apply(libs.findPlugin("spotless").get().get().pluginId)
     }
 }

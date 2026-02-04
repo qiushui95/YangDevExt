@@ -1,4 +1,4 @@
-import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.internal.dsl.LibraryExtensionImpl
 import nbe.someone.code.configSamePlugins
 import nbe.someone.code.configSpotless
 import nbe.someone.code.configureKotlin
@@ -22,10 +22,9 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                 apply(libs.findPlugin("maven").get().get().pluginId)
             }
 
-            extensions.configure<LibraryExtension> {
+            extensions.configure<LibraryExtensionImpl> {
                 configureKotlinAndroid(this)
                 defaultConfig.consumerProguardFiles("consumer-rules.pro")
-                defaultConfig.targetSdk = 35
             }
 
             configSpotless()
