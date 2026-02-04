@@ -2,8 +2,8 @@
 #http://Nothing
 agp = "8.10.1"
 
-#https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/README-CN.md
-androidutils = "1.31.1"
+#https://developer.android.com/jetpack/androidx/releases/annotation
+annotation = "1.9.1"
 
 #https://developer.android.com/jetpack/compose/bom/bom-mapping
 compose-core = "1.8.2"
@@ -65,9 +65,9 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 
 
 [libraries]
+#https://developer.android.com/jetpack/androidx/releases/annotation
+annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
 
-#https://github.com/Blankj/AndroidUtilCode/blob/master/lib/utilcode/README-CN.md
-androidUtils = { module = "com.blankj:utilcodex", version.ref = "androidutils" }
 
 #https://developer.android.com/jetpack/androidx/releases/compose
 compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose-core" }

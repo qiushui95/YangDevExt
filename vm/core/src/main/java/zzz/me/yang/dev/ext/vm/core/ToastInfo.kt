@@ -1,7 +1,7 @@
 package zzz.me.yang.dev.ext.vm.core
 
-import com.blankj.utilcode.util.StringUtils
-import com.blankj.utilcode.util.ToastUtils
+import zzz.me.yang.dev.ext.utils.StringUtils
+import zzz.me.yang.dev.ext.utils.ToastUtils
 
 public sealed class ToastInfo {
     public abstract val isShort: Boolean

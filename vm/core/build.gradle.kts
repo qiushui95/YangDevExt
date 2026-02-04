@@ -12,7 +12,7 @@ dependencies {
     implementation(libs.lifecycle.runtime)
     implementation(libs.lifecycle.viewmodel)
 
-    implementation(libs.androidUtils)
+    implementation(projects.utils)
 
     api(libs.flowmvi.core)
 

@@ -32,6 +32,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.utils)
     implementation(projects.coroutines)
     implementation(projects.fragment)
     implementation(projects.moshi)
