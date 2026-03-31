@@ -35,7 +35,7 @@ dependencies {
     implementation(projects.utils)
     implementation(projects.coroutines)
     implementation(projects.fragment)
-    implementation(projects.moshi)
+//    implementation(projects.moshi)
     implementation(projects.normal)
     implementation(projects.vm.core)
     implementation(projects.vm.ext)

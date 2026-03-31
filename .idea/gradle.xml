@@ -28,7 +28,6 @@
             <option value="$PROJECT_DIR$/entity" />
             <option value="$PROJECT_DIR$/entity/paging" />
             <option value="$PROJECT_DIR$/fragment" />
-            <option value="$PROJECT_DIR$/moshi" />
             <option value="$PROJECT_DIR$/normal" />
             <option value="$PROJECT_DIR$/utils" />
             <option value="$PROJECT_DIR$/vm" />
