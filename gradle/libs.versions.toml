@@ -6,7 +6,7 @@ agp = "9.1.0"
 annotation = "1.9.1"
 
 #https://developer.android.com/jetpack/compose/bom/bom-mapping
-compose-core = "1.10.2"
+compose-core = "1.10.6"
 compose-material3 = "1.4.0"
 
 #https://github.com/Kotlin/kotlinx.coroutines
@@ -19,19 +19,19 @@ flowmvi = "3.2.1"
 fragment = "1.8.9"
 
 #https://github.com/JodaOrg/joda-time
-jodatime = "2.14.0"
+jodatime = "2.14.1"
 
 #https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
-junit5 = "6.0.2"
+junit5 = "6.0.3"
 
 #https://github.com/InsertKoinIO/koin
-koin = "4.1.1"
+koin = "4.2.0"
 
 #https://github.com/JetBrains/kotlin
-kotlin = "2.3.0"
+kotlin = "2.3.20"
 
 #https://github.com/google/ksp
-ksp = "2.3.5"
+ksp = "2.3.6"
 
 #https://github.com/pinterest/ktlint
 ktlint = "1.8.0"
@@ -42,11 +42,8 @@ lifecycle = "2.10.0"
 #https://github.com/vanniktech/gradle-maven-publish-plugin
 maven = "0.36.0"
 
-#https://github.com/square/moshi
-moshi = "1.15.2"
-
 #https://github.com/diffplug/spotless
-spotless = "8.2.1"
+spotless = "8.4.0"
 
 
 
@@ -113,10 +110,6 @@ koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 #https://developer.android.com/jetpack/androidx/releases/lifecycle
 lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
 lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
-
-#https://github.com/square/moshi
-moshi-core = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
-moshi-ksp = { module = "com.squareup.moshi:moshi-kotlin-codegen", version.ref = "moshi" }
 
 #https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
 test-junit5-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
