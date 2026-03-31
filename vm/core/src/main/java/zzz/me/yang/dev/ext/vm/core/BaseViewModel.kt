@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.koin.core.Koin
 import pro.respawn.flowmvi.api.ActionShareBehavior
+import pro.respawn.flowmvi.api.DelicateStoreApi
 import pro.respawn.flowmvi.api.PipelineContext
 import pro.respawn.flowmvi.api.StateProvider
 import pro.respawn.flowmvi.api.Store
@@ -119,6 +120,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         return onFail ?: { this@BaseViewModel.intentError(it) }
     }
 
+    @OptIn(DelicateStoreApi::class)
     public override suspend fun <T> startSuspendWork(
         pipeline: Pipeline<U, I, A>,
         key: String?,
@@ -168,6 +170,7 @@ public abstract class BaseViewModel<U : VMUI, I, A : VMAction, Args : BasePageAr
         updateState { asyncMapper(asyncBlock()) }
     }
 
+    @OptIn(DelicateStoreApi::class)
     private fun <T> doSuspendWork(
         pipeline: Pipeline<U, I, A>,
         job: Job?,
