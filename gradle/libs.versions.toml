@@ -1,6 +1,6 @@
 [versions]
 #http://Nothing
-agp = "9.0.0"
+agp = "9.1.0"
 
 #https://developer.android.com/jetpack/androidx/releases/annotation
 annotation = "1.9.1"
