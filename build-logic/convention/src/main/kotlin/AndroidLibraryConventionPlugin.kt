@@ -1,4 +1,4 @@
-import com.android.build.gradle.internal.dsl.LibraryExtensionImpl
+import com.android.build.api.dsl.LibraryExtension
 import nbe.someone.code.configSamePlugins
 import nbe.someone.code.configSpotless
 import nbe.someone.code.configureKotlin
@@ -22,7 +22,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                 apply(libs.findPlugin("maven").get().get().pluginId)
             }
 
-            extensions.configure<LibraryExtensionImpl> {
+            extensions.configure<LibraryExtension> {
                 configureKotlinAndroid(this)
                 defaultConfig.consumerProguardFiles("consumer-rules.pro")
             }
