@@ -1,8 +1,6 @@
-jdk:
-    - openjdk21
 before_install:
     - chmod +x gradlew
 env:
-    GRADLE_OPTS: "-Dorg.gradle.daemon=true -Xmx1024m -XX:MaxMetaspaceSize=512m" # 新增环境变量
+    GRADLE_OPTS: "-Dorg.gradle.daemon=true -Xmx2G -XX:MaxMetaspaceSize=1G"
 install:
     - ./gradlew publishToMavenLocal
